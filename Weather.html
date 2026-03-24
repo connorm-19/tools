@@ -298,7 +298,7 @@ const FAVOURITES = [
 let activeLoc = { ...FAVOURITES[0] };
 
 const CACHE_TTL = 10 * 60 * 1000;
-const cacheKey = loc => `yvr_wx_v4_${loc.lat.toFixed(4)}_${loc.lon.toFixed(4)}`;
+const cacheKey = loc => `yvr_wx_v5_${loc.lat.toFixed(4)}_${loc.lon.toFixed(4)}`;
 
 const DIRS = ['↑','↑↗','↗','↗↘','→','↘→','↘','↘↓','↓','↓↙','↙','↙←','←','←↖','↖','↖↑'];
 const toDir = d => DIRS[Math.round(d / 22.5) % 16];
@@ -419,6 +419,31 @@ document.addEventListener('click', e => {
     document.getElementById('searchResults').classList.remove('open');
   }
 });
+
+// ---- Sticky Y-axis overlay ----
+function drawYAxisOverlay(overlayId, tMin, tMax, PAD_T, PAD_B, CH) {
+  const el = document.getElementById(overlayId);
+  if (!el) return;
+  const dpr = window.devicePixelRatio || 1;
+  let oc = el.querySelector('canvas');
+  if (!oc) { oc = document.createElement('canvas'); el.appendChild(oc); }
+  const PH = CH - PAD_T - PAD_B;
+  oc.width = 48*dpr; oc.height = CH*dpr;
+  oc.style.width = '48px'; oc.style.height = CH+'px';
+  const ctx = oc.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, 48, CH);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, 48, CH);
+  ctx.font = '10px DM Mono,monospace';
+  ctx.fillStyle = '#9ba8b5';
+  ctx.textAlign = 'right';
+  for (let g = 0; g <= 4; g++) {
+    const y = PAD_T + (g/4)*PH;
+    ctx.fillText(`${Math.round(tMax-(g/4)*(tMax-tMin))}°`, 43, y+3);
+  }
+  el.style.height = CH+'px';
+}
 
 // ---- Canvas chart ----
 function drawChart(h, now) {
