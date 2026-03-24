@@ -263,7 +263,7 @@
     <!-- 48hr chart -->
     <div class="chart-card full">
       <div class="chart-top">
-        <div class="chart-title">48-Hour Overview</div>
+        <div class="chart-title">72-Hour Overview</div>
         <div class="chart-legend">
           <div class="leg"><div class="leg-dot" style="background:#ef4444"></div>Temp</div>
           <div class="leg"><div class="leg-dot" style="background:#f87171"></div>Feels</div>
@@ -276,7 +276,7 @@
 
     <!-- Tabs -->
     <div class="tabs">
-      <button class="tab active" id="tab-hourly" onclick="switchTab('hourly')">48hr Detail</button>
+      <button class="tab active" id="tab-hourly" onclick="switchTab('hourly')">72hr Detail</button>
       <button class="tab" id="tab-extended" onclick="switchTab('extended')">7-Day</button>
     </div>
     <div id="panel-hourly"></div>
@@ -298,7 +298,7 @@ const FAVOURITES = [
 let activeLoc = { ...FAVOURITES[0] };
 
 const CACHE_TTL = 10 * 60 * 1000;
-const cacheKey = loc => `yvr_wx_v5_${loc.lat.toFixed(4)}_${loc.lon.toFixed(4)}`;
+const cacheKey = loc => `yvr_wx_v6_${loc.lat.toFixed(4)}_${loc.lon.toFixed(4)}`;
 
 const DIRS = ['↑','↑↗','↗','↗↘','→','↘→','↘','↘↓','↓','↓↙','↙','↙←','←','←↖','↖','↖↑'];
 const toDir = d => DIRS[Math.round(d / 22.5) % 16];
@@ -445,26 +445,25 @@ function drawYAxisOverlay(overlayId, tMin, tMax, PAD_T, PAD_B, CH) {
   el.style.height = CH+'px';
 }
 
-// ---- Canvas chart ----
-function drawChart(h, now) {
+// ---- Canvas chart (72hr, 15-min resolution) ----
+function drawChart(m15, now) {
   const canvas = document.getElementById('chart');
-  const todayStr = now.toISOString().slice(0,10);
-  const d1=new Date(now); d1.setDate(d1.getDate()+1);
-  const d2=new Date(now); d2.setDate(d2.getDate()+2);
-  const days=[todayStr,d1.toISOString().slice(0,10),d2.toISOString().slice(0,10)];
+  if (!m15 || !m15.time || m15.time.length === 0) return;
 
-  const all=[];
-  for (const ds of days)
-    for (let hr=0;hr<24;hr++){
-      const t=`${ds}T${String(hr).padStart(2,'0')}:00`;
-      const i=h.time.indexOf(t);
-      if(i!==-1) all.push({t,i,hr,ds});
-    }
-  const si=all.findIndex(x=>x.ds===todayStr&&x.hr===now.getHours());
-  const pts=all.slice(Math.max(0,si),si+49);
+  const nowMs = now.getTime();
+  const times = m15.time.map(t => new Date(t).getTime());
+  let si = times.findIndex(t => t >= nowMs);
+  if (si < 0) si = 0;
+  si = Math.max(0, si - 1);
+  // 72 hours * 4 points/hr = 288 points
+  const pts = [];
+  for (let i = si; i < Math.min(si + 289, m15.time.length); i++) {
+    const d = new Date(m15.time[i]);
+    pts.push({t: m15.time[i], i, hr: d.getHours(), ds: m15.time[i].slice(0,10)});
+  }
   if(pts.length<2) return;
 
-  const N=pts.length, COL=30;
+  const N=pts.length, COL=12;
   const PAD_L=48,PAD_R=16,PAD_T=40,PAD_B=82;
   const CW=N*COL+PAD_L+PAD_R, CH=270;
   const PW=CW-PAD_L-PAD_R, PH=CH-PAD_T-PAD_B;
@@ -475,10 +474,10 @@ function drawChart(h, now) {
   const ctx=canvas.getContext('2d');
   ctx.scale(dpr,dpr); ctx.clearRect(0,0,CW,CH);
 
-  const temps=pts.map(x=>h.temperature_2m[x.i]);
-  const feels=pts.map(x=>h.apparent_temperature[x.i]);
-  const winds=pts.map(x=>h.wind_speed_10m[x.i]);
-  const precips=pts.map(x=>h.precipitation[x.i]);
+  const temps=pts.map(x=>m15.temperature_2m[x.i]);
+  const feels=pts.map(x=>m15.apparent_temperature[x.i]);
+  const winds=pts.map(x=>m15.wind_speed_10m[x.i]);
+  const precips=pts.map(x=>m15.precipitation[x.i]);
 
   const tMin=0, tMax=Math.max(...temps,...feels)+3;
   const wMax=Math.max(...winds,8)*1.2;
@@ -527,26 +526,26 @@ function drawChart(h, now) {
   for(let i=1;i<N;i++) ctx.lineTo(xAt(i),yT(temps[i]));
   ctx.stroke();
   for(let i=0;i<N;i++){
-    if(i%3!==0) continue;
+    if(i%4!==0) continue;
     const x=xAt(i),y=yT(temps[i]);
-    ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fillStyle='#ef4444'; ctx.fill();
-    ctx.font='bold 10px DM Sans,sans-serif'; ctx.fillStyle='#1a2030'; ctx.textAlign='center';
-    ctx.fillText(`${Math.round(temps[i])}°`,x,y-8);
+    ctx.beginPath(); ctx.arc(x,y,2,0,Math.PI*2); ctx.fillStyle='#ef4444'; ctx.fill();
+    ctx.font='bold 9px DM Sans,sans-serif'; ctx.fillStyle='#1a2030'; ctx.textAlign='center';
+    ctx.fillText(`${Math.round(temps[i])}°`,x,y-7);
   }
-  // Wind value labels every 3 hours
+  // Wind value labels every hour
   for(let i=0;i<N;i++){
-    if(i%3!==0) continue;
+    if(i%4!==0) continue;
     const x=xAt(i), yw=yW(winds[i]);
     ctx.beginPath(); ctx.arc(x,yw,2,0,Math.PI*2); ctx.fillStyle='#10b981'; ctx.fill();
     ctx.font='9px DM Mono,monospace'; ctx.fillStyle='#10b981'; ctx.textAlign='center';
-    ctx.fillText(`${Math.round(winds[i])}`,x,yw-7);
+    ctx.fillText(`${Math.round(winds[i])}`,x,yw-6);
   }
   for(let i=0;i<N;i++){
-    if(i%3!==0) continue;
+    const d=new Date(pts[i].t), mm=d.getMinutes();
+    if(mm!==0) continue; // only label on the hour
     const x=xAt(i);
     ctx.font='10px DM Mono,monospace'; ctx.fillStyle='#6b7a8d'; ctx.textAlign='center';
     ctx.fillText(fmtHr(pts[i].hr),x,PAD_T+PH+14);
-    ctx.font='14px serif'; ctx.fillText(wx(h.weather_code[pts[i].i]).i,x,PAD_T+PH+30);
   }
   let lastDs=pts[0].ds;
   for(let i=1;i<N;i++){
@@ -830,7 +829,7 @@ function renderAll(data){
   const now=new Date();
   renderCurrent(data.hourly,now);
   drawChart15(data.minutely_15, now);
-  drawChart(data.hourly,now);
+  drawChart(data.minutely_15, now);
   renderHourly(data.hourly,now);
   renderExtended(data.hourly,now);
 }
