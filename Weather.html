@@ -873,7 +873,7 @@ async function loadLocation(){
   } else {
     showLoading();
     try{const d=await fetchFresh();saveCache(d);renderAll(d);showContent();setUpdated(Date.now());}
-    catch(e){showError('Network blocked — save this file and open it directly in your browser. It will work perfectly.');}
+    catch(e){showError('Could not load weather data. Check your internet connection and try refreshing. (' + e.message + ')');}
   }
 }
 
