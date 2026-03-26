@@ -200,6 +200,43 @@
 
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* ---- Trip Climate Section ---- */
+  .trip-section { margin-top: 20px; }
+  .trip-section-title {
+    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); margin-bottom: 10px; font-family: 'DM Mono', monospace;
+  }
+  .trip-scroll-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .trip-inner { display: flex; gap: 10px; min-width: max-content; padding-bottom: 4px; }
+  .trip-card {
+    background: var(--card); border-radius: var(--r); box-shadow: var(--shadow);
+    width: 200px; flex-shrink: 0; overflow: hidden;
+  }
+  .trip-card-header {
+    padding: 10px 12px 8px; border-bottom: 1px solid var(--border);
+    background: var(--card2);
+  }
+  .trip-card-city { font-size: 13px; font-weight: 700; color: var(--text); }
+  .trip-card-dates { font-size: 10px; color: var(--dim); font-family: 'DM Mono', monospace; margin-top: 2px; }
+  .trip-card-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+  .trip-row { display: flex; justify-content: space-between; align-items: baseline; }
+  .trip-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dim); font-family: 'DM Mono', monospace; }
+  .trip-val { font-size: 13px; font-weight: 600; color: var(--text); }
+  .trip-val.warm { color: #e05c00; }
+  .trip-val.cool { color: #2563eb; }
+  .trip-divider { height: 1px; background: var(--border); margin: 2px 0; }
+  .trip-forecast-badge {
+    font-size: 9px; font-family: 'DM Mono', monospace; font-weight: 600;
+    padding: 2px 7px; border-radius: 20px; display: inline-block; margin-top: 2px;
+  }
+  .trip-forecast-badge.live { background: #d1fae5; color: #065f46; }
+  .trip-forecast-badge.historical { background: var(--accent-light); color: var(--accent); }
+  .trip-forecast-loading { font-size: 11px; color: var(--dim); font-style: italic; }
+  .trip-forecast-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .trip-forecast-icon { font-size: 16px; }
+  .trip-forecast-temp { font-size: 13px; font-weight: 700; color: var(--text); }
+  .trip-forecast-cond { font-size: 11px; color: var(--muted); }
+
   @media (max-width: 640px) {
     .top-row { flex-direction: column; }
     .current { flex: none; }
@@ -281,6 +318,14 @@
     </div>
     <div id="panel-hourly"></div>
     <div id="panel-extended" style="display:none"></div>
+
+    <!-- Trip Climate / Forecast -->
+    <div class="trip-section">
+      <div class="trip-section-title">🎒 2026 Trip — Climate & Forecast</div>
+      <div class="trip-scroll-wrap">
+        <div class="trip-inner" id="tripCards"></div>
+      </div>
+    </div>
 
   </div>
 </div>
@@ -890,6 +935,112 @@ function switchTab(t){
   $('tab-extended').className='tab'+(t==='extended'?' active':'');
 }
 
+// ---- Trip Climate & Forecast ----
+const TRIP_SEGMENTS = [
+  { city: 'Lyon',        label: 'Camino Depart',  dates: 'Apr 14–17',  start: '2026-04-14', end: '2026-04-17', lat: 45.7640, lon: 4.8357,   avgHi: 16, avgLo: 6  },
+  { city: 'Conques',     label: 'Via Podiensis',  dates: 'Apr 21–24',  start: '2026-04-21', end: '2026-04-24', lat: 44.5989, lon: 2.3997,   avgHi: 16, avgLo: 4  },
+  { city: 'Rocamadour',  label: 'Via Podiensis',  dates: 'Apr 23–27',  start: '2026-04-23', end: '2026-04-27', lat: 44.7993, lon: 1.6179,   avgHi: 17, avgLo: 6  },
+  { city: 'Moissac',     label: 'Via Podiensis',  dates: 'Apr 28–May 1', start: '2026-04-28', end: '2026-05-01', lat: 44.1043, lon: 1.0832, avgHi: 18, avgLo: 8  },
+  { city: 'Bordeaux',    label: 'France Bike',    dates: 'May 1–5',    start: '2026-05-01', end: '2026-05-05', lat: 44.8378, lon: -0.5792,  avgHi: 18, avgLo: 7  },
+  { city: 'Milan',       label: 'France Bike',    dates: 'May 2–8',    start: '2026-05-02', end: '2026-05-08', lat: 45.4654, lon: 9.1859,   avgHi: 22, avgLo: 11 },
+  { city: 'Lyon',        label: 'France Bike',    dates: 'May 9–13',   start: '2026-05-09', end: '2026-05-13', lat: 45.7640, lon: 4.8357,   avgHi: 19, avgLo: 9  },
+  { city: 'Avignon',     label: 'France Bike',    dates: 'May 15–20',  start: '2026-05-15', end: '2026-05-20', lat: 43.9493, lon: 4.8055,   avgHi: 22, avgLo: 11 },
+];
+
+function tripTempClass(hi) {
+  if (hi >= 20) return 'warm';
+  if (hi <= 10) return 'cool';
+  return '';
+}
+
+function tripAvgMean(hi, lo) { return Math.round((hi + lo) / 2); }
+
+async function fetchTripForecast(seg) {
+  // Open-Meteo free forecast goes up to 16 days ahead
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const startDate = new Date(seg.start);
+  const daysAhead = Math.round((startDate - today) / 86400000);
+  if (daysAhead > 15) return null; // beyond free forecast range
+
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${seg.lat}&longitude=${seg.lon}` +
+    `&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum` +
+    `&timezone=auto&start_date=${seg.start}&end_date=${seg.end}`;
+  const r = await fetch(url, { cache: 'no-store' });
+  if (!r.ok) return null;
+  const d = await r.json();
+  if (!d.daily || !d.daily.time.length) return null;
+  return d.daily;
+}
+
+function renderTripForecast(el, daily) {
+  if (!daily) return;
+  // Average across the period
+  const maxes = daily.temperature_2m_max;
+  const mins  = daily.temperature_2m_min;
+  const codes = daily.weather_code;
+  const precips = daily.precipitation_sum;
+  const avgHi  = Math.round(maxes.reduce((a,b)=>a+b,0)/maxes.length);
+  const avgLo  = Math.round(mins.reduce((a,b)=>a+b,0)/mins.length);
+  const totPrecip = precips.reduce((a,b)=>a+b,0).toFixed(1);
+  // Most common weather code (mode)
+  const modeCode = codes.sort((a,b) =>
+    codes.filter(v=>v===a).length - codes.filter(v=>v===b).length).pop();
+  const w = wx(modeCode);
+
+  el.innerHTML = `
+    <div class="trip-divider"></div>
+    <div class="trip-forecast-badge live">LIVE FORECAST</div>
+    <div class="trip-forecast-row" style="margin-top:6px">
+      <span class="trip-forecast-icon">${w.i}</span>
+      <span class="trip-forecast-temp">${avgLo}–${avgHi}°C</span>
+      <span class="trip-forecast-cond">${w.l}</span>
+    </div>
+    <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:3px">💧 ${totPrecip}mm total</div>
+  `;
+}
+
+async function renderTripCards() {
+  const container = document.getElementById('tripCards');
+  if (!container) return;
+
+  container.innerHTML = TRIP_SEGMENTS.map(seg => `
+    <div class="trip-card" id="trip-${seg.city.toLowerCase().replace(/\s/g,'')}-${seg.start}">
+      <div class="trip-card-header">
+        <div class="trip-card-city">${seg.city}</div>
+        <div class="trip-card-dates">${seg.label} · ${seg.dates}</div>
+      </div>
+      <div class="trip-card-body">
+        <div class="trip-row">
+          <span class="trip-label">Hist. Avg</span>
+          <span class="trip-val ${tripTempClass(seg.avgHi)}">${tripAvgMean(seg.avgHi, seg.avgLo)}°C</span>
+        </div>
+        <div class="trip-row">
+          <span class="trip-label">Hi / Lo</span>
+          <span class="trip-val" style="font-size:12px">${seg.avgLo}–${seg.avgHi}°C</span>
+        </div>
+        <span class="trip-forecast-badge historical">HISTORICAL AVG</span>
+        <div id="trip-fc-${seg.start}-${seg.lat}" class="trip-forecast-loading" style="margin-top:4px">Checking forecast…</div>
+      </div>
+    </div>
+  `).join('');
+
+  // Fire off forecast fetches in parallel
+  await Promise.all(TRIP_SEGMENTS.map(async seg => {
+    const fcEl = document.getElementById(`trip-fc-${seg.start}-${seg.lat}`);
+    try {
+      const daily = await fetchTripForecast(seg);
+      if (daily) {
+        renderTripForecast(fcEl, daily);
+      } else {
+        fcEl.textContent = ''; // too far out, no message needed
+      }
+    } catch(e) {
+      fcEl.textContent = '';
+    }
+  }));
+}
+
 // ---- Boot ----
 document.getElementById('searchInput').addEventListener('input', onSearchInput);
 document.getElementById('searchInput').addEventListener('keydown', e => {
@@ -898,6 +1049,7 @@ document.getElementById('searchInput').addEventListener('keydown', e => {
 updateHeader();
 renderFavourites();
 loadLocation();
+renderTripCards();
 </script>
 </body>
 </html>
