@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GR65 · Le Puy to Moissac · April 2025</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root {
+  --sand:#f5f0e8; --parchment:#ede5d4; --ink:#1a1410; --ink-mid:#3d342a;
+  --ink-soft:#6b5e52; --ink-faint:#a89880; --gold:#c8922a; --gold-light:#e8c87a;
+  --pilgrim:#7a4f2a; --variant:#b07030; --red:#c0392b; --red-soft:#fdf0ee;
+  --green:#2e6b4a; --green-soft:#eef6f1; --changed:#1a5276; --changed-soft:#eaf2fb;
+  --border:rgba(90,70,50,0.15); --border-med:rgba(90,70,50,0.25);
+  --shadow:0 2px 16px rgba(30,20,10,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--ink);font-size:14px;line-height:1.6;min-height:100vh}
+
+.header{background:var(--ink);color:var(--sand);padding:48px 40px 40px;position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 40px,rgba(200,146,42,0.04) 40px,rgba(200,146,42,0.04) 41px);pointer-events:none}
+.header-inner{max-width:1100px;margin:0 auto;position:relative}
+.eyebrow{font-size:10px;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold-light);margin-bottom:12px}
+.header h1{font-family:'Playfair Display',serif;font-size:clamp(26px,4vw,44px);font-weight:400;line-height:1.15;color:#fff;margin-bottom:8px}
+.header h1 em{font-style:italic;color:var(--gold-light)}
+.header-sub{font-size:13px;color:rgba(245,240,232,0.6);font-weight:300;margin-bottom:32px}
+.stat-row{display:flex;gap:10px;flex-wrap:wrap}
+.stat-pill{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:999px;padding:8px 18px;display:flex;flex-direction:column;gap:1px}
+.stat-pill .val{font-family:'Playfair Display',serif;font-size:19px;font-weight:600;color:#fff;line-height:1}
+.stat-pill .lbl{font-size:10px;font-weight:400;letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,240,232,0.5)}
+
+.main{max-width:1100px;margin:0 auto;padding:36px 24px 60px}
+.section-head{display:flex;align-items:baseline;gap:12px;margin-bottom:18px;margin-top:36px}
+.section-head h2{font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:var(--ink)}
+.section-head .rule{flex:1;height:1px;background:var(--border-med)}
+
+.pace-note{background:var(--parchment);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:14px 18px;font-size:12.5px;color:var(--ink-mid);line-height:1.7;margin-bottom:28px}
+.pace-note strong{color:var(--ink)}
+
+/* MAP */
+#routeMap{width:100%;height:460px;border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden}
+.map-legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-size:12px;color:var(--ink-soft);align-items:center}
+
+/* CHARTS */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px}
+@media(max-width:720px){.charts-grid{grid-template-columns:1fr}}
+.chart-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;box-shadow:var(--shadow)}
+.chart-card.wide{grid-column:1/-1}
+.chart-title{font-size:11px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:16px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px;font-size:11.5px;color:var(--ink-soft);align-items:center}
+.ld{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle}
+
+.ele-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px}
+.ele-tab{padding:4px 10px;border-radius:999px;border:1px solid var(--border-med);background:transparent;font-size:11.5px;font-family:'DM Sans',sans-serif;font-weight:500;color:var(--ink-soft);cursor:pointer;transition:all .15s}
+.ele-tab:hover{background:var(--parchment)}
+.ele-tab.active{background:var(--ink);color:var(--sand);border-color:var(--ink)}
+.ele-tab.warn-tab{border-color:var(--red);color:var(--red)}
+.ele-tab.warn-tab.active{background:var(--red);color:#fff}
+.ele-tab.variant-tab{border-color:var(--variant);color:var(--variant)}
+.ele-tab.variant-tab.active{background:var(--variant);color:#fff}
+.ele-stats-bar{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--ink-soft)}
+.ele-stats-bar strong{color:var(--ink)}
+
+/* TABLE */
+.table-wrap{background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead tr{background:var(--ink)}
+thead th{padding:11px 12px;text-align:left;font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,240,232,0.7);white-space:nowrap}
+thead th.r{text-align:right}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--parchment)}
+tbody tr.variant-row{background:rgba(176,112,48,0.04)}
+tbody tr.variant-row:hover{background:rgba(176,112,48,0.09)}
+tbody tr.warn-row{background:rgba(192,57,43,0.03)}
+tbody tr.warn-row:hover{background:rgba(192,57,43,0.06)}
+td{padding:10px 12px;color:var(--ink-mid);vertical-align:middle}
+td.r{text-align:right}
+td.num{font-family:'Playfair Display',serif;font-size:14px;font-weight:600;color:var(--ink)}
+td.date-cell{color:var(--ink-faint);font-size:11.5px;white-space:nowrap}
+td.time-cell{font-weight:500;color:var(--ink);white-space:nowrap}
+td.ele-cell{font-size:11px;white-space:nowrap;color:var(--ink-soft)}
+
+.badge{display:inline-block;font-size:9.5px;font-weight:500;padding:2px 7px;border-radius:999px;vertical-align:middle;margin-left:4px;white-space:nowrap}
+.b-variant{background:rgba(176,112,48,0.12);color:var(--variant)}
+.b-warn{background:rgba(192,57,43,0.1);color:var(--red)}
+.b-travel{background:rgba(90,70,50,0.08);color:var(--ink-soft)}
+.warn-banner{background:var(--red-soft);border:1px solid rgba(192,57,43,0.2);border-radius:6px;padding:7px 12px;font-size:11.5px;color:#8b1a14;line-height:1.6;margin-top:5px}
+
+.footnote{font-size:11.5px;color:var(--ink-faint);line-height:1.7;margin-top:20px;border-top:1px solid var(--border);padding-top:16px}
+.footnote a{color:var(--pilgrim);text-decoration:none}
+.footer{background:var(--ink);color:rgba(245,240,232,0.4);text-align:center;padding:24px;font-size:11.5px;margin-top:48px}
+.footer strong{color:rgba(245,240,232,0.7)}
+@media(max-width:700px){.header{padding:32px 20px 28px}.main{padding:24px 16px 48px}td,th{padding:8px 8px}.hide-mobile{display:none}}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <p class="eyebrow">Via Podiensis · GR65 · Rocamadour Variant</p>
+    <h1>Le Puy to Moissac<br><em>April 15 – April 30, 2025</em></h1>
+    <p class="header-sub">Connor · Lauren · Father &nbsp;·&nbsp; 16 walking days &nbsp;·&nbsp; Lyon → Bordeaux → Milan</p>
+    <div class="stat-row">
+      <div class="stat-pill"><span class="val">447.2</span><span class="lbl">GPS km</span></div>
+      <div class="stat-pill"><span class="val">~9,500</span><span class="lbl">metres ascent</span></div>
+      <div class="stat-pill"><span class="val">5.36</span><span class="lbl">base km/h (Strava)</span></div>
+      <div class="stat-pill"><span class="val">2</span><span class="lbl">book-early stops</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+
+  <div class="pace-note">
+    <strong>Pace model (updated):</strong> Pure moving time, calibrated from your actual Strava data. Formula: <strong>speed = 5.36 − 0.0185 × (gain/km) − 0.004 × (loss/km)</strong>, floored at 3.0 km/h. Derived via regression from the <strong>Camino Francés 2022</strong> (22 days, mean 5.06 km/h at 16m/km avg gain density), <strong>TMB 2023</strong> (5 days, mean 4.30 km/h at 53m/km avg gain density), and grade/speed streams from Howe Sound Crest Trail, A lot of cloud, and Hanes Valley. BC trail streams confirmed flat-terrain median ~4.2 km/h on rough terrain; GR65 maintained paths run ~20% faster for the same grade, consistent with Camino actuals. The new model runs ~55 min faster per day on average than the old 5.2 km/h + 600m/h formula. No rest, food stops, or churches included.
+  </div>
+
+  <!-- MAP -->
+  <div class="section-head"><h2>Route map</h2><div class="rule"></div></div>
+  <div id="routeMap"></div>
+  <div class="map-legend">
+    <span><span class="ld" style="background:#3a2a1a"></span>Main GR65</span>
+    <span><span class="ld" style="background:#b07030"></span>Rocamadour variant</span>
+    <span><span class="ld" style="background:#c0392b"></span>Book early</span>
+    <span style="font-size:11px;color:var(--ink-faint)">Click any marker for details</span>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="section-head"><h2>Distance &amp; terrain overview</h2><div class="rule"></div></div>
+  <div class="charts-grid">
+    <div class="chart-card wide">
+      <p class="chart-title">Daily distance (km) — hover for gain/loss</p>
+      <div class="legend">
+        <span><span class="ld" style="background:#3a2a1a"></span>Main GR65</span>
+        <span><span class="ld" style="background:#b07030"></span>Rocamadour variant</span>
+      </div>
+      <div style="position:relative;width:100%;height:180px"><canvas id="barChart"></canvas></div>
+    </div>
+    <div class="chart-card wide">
+      <p class="chart-title">Ascent ↑ / Descent ↓ per day (metres)</p>
+      <div style="position:relative;width:100%;height:180px"><canvas id="gainChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <p class="chart-title">Moving time per day</p>
+      <div class="legend">
+        <span><span class="ld" style="background:#2e6b4a"></span>&lt;6h</span>
+        <span><span class="ld" style="background:#c8922a"></span>6–8h</span>
+        <span><span class="ld" style="background:#c0392b"></span>&gt;8h</span>
+      </div>
+      <div style="position:relative;width:100%;height:180px"><canvas id="timeChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <p class="chart-title">Cumulative distance</p>
+      <div style="position:relative;width:100%;height:180px"><canvas id="cumulChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ELEVATION -->
+  <div class="section-head"><h2>Elevation profiles</h2><div class="rule"></div></div>
+  <div class="chart-card" style="margin-bottom:28px">
+    <div class="ele-tabs" id="eleTabs"></div>
+    <div style="position:relative;width:100%;height:170px"><canvas id="eleChart"></canvas></div>
+    <div id="eleWpts" style="position:relative;height:16px;margin-top:2px"></div>
+    <div class="ele-stats-bar" id="eleStats"></div>
+  </div>
+
+
+  <!-- WEATHER & SERVICES -->
+  <div class="section-head"><h2>Weather &amp; field notes</h2><div class="rule"></div></div>
+  <div class="charts-grid" style="margin-bottom:28px">
+
+    <!-- WEATHER ZONES -->
+    <div class="chart-card" style="grid-column:1/-1">
+      <p class="chart-title">Average April conditions by terrain zone</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:4px">
+
+        <div style="border:1px solid var(--border);border-radius:8px;padding:14px">
+          <div style="font-weight:500;font-size:12.5px;margin-bottom:8px">🏔 Margeride plateau <span style="font-size:10px;color:var(--ink-faint)">D1–D4 · 900–1300m</span></div>
+          <div style="font-size:12px;color:var(--ink-mid);line-height:1.8">
+            High <strong>10–13°C</strong> · Low <strong>1–3°C</strong><br>
+            Rain ~27% of days · Light snow possible at night<br>
+            Wind 20 km/h avg · 44% sunny hours<br>
+            <span style="color:#8b7060;font-size:11px">Pack layers. Mornings cold, afternoons mild.</span>
+          </div>
+        </div>
+
+        <div style="border:1px solid var(--border);border-radius:8px;padding:14px;border-left:3px solid #c0392b">
+          <div style="font-weight:500;font-size:12.5px;margin-bottom:8px">⚠ Aubrac plateau <span style="font-size:10px;color:var(--ink-faint)">D5–D6 · 1040–1370m</span></div>
+          <div style="font-size:12px;color:var(--ink-mid);line-height:1.8">
+            High <strong>9–13°C</strong> · Low <strong>1–3°C</strong><br>
+            Rain/snow ~32% of days · <strong>Late snow possible</strong><br>
+            Wind 24 km/h avg · Completely exposed<br>
+            <span style="color:#c0392b;font-size:11px">Check forecast the night before. Snow has been recorded on this plateau in late May. Fog can make trail markers invisible. No shelter AA→Nasbinals (26km).</span>
+          </div>
+        </div>
+
+        <div style="border:1px solid var(--border);border-radius:8px;padding:14px">
+          <div style="font-weight:500;font-size:12.5px;margin-bottom:8px">🌿 Lot valley <span style="font-size:10px;color:var(--ink-faint)">D7–D9 · 200–500m</span></div>
+          <div style="font-size:12px;color:var(--ink-mid);line-height:1.8">
+            High <strong>16–18°C</strong> · Low <strong>6–8°C</strong><br>
+            Rain ~20% of days · No snow risk<br>
+            Sheltered, wooded, significantly warmer<br>
+            <span style="color:#8b7060;font-size:11px">Pleasant walking. Strip the layers after Saint-Chély descent.</span>
+          </div>
+        </div>
+
+        <div style="border:1px solid var(--border);border-radius:8px;padding:14px">
+          <div style="font-weight:500;font-size:12.5px;margin-bottom:8px">🌾 Quercy / Lot <span style="font-size:10px;color:var(--ink-faint)">D10–D16 · 100–450m</span></div>
+          <div style="font-size:12px;color:var(--ink-mid);line-height:1.8">
+            High <strong>17–18°C</strong> · Low <strong>7–9°C</strong><br>
+            Rain ~20% of days · April is wettest month in Cahors<br>
+            Rolling limestone causse — some exposed ridges<br>
+            <span style="color:#8b7060;font-size:11px">Most consistently pleasant zone. Bring a rain layer — April showers are common.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SERVICES FLAGS -->
+    <div class="chart-card" style="grid-column:1/-1">
+      <p class="chart-title">Services &amp; resupply flags</p>
+      <div style="overflow-x:auto">
+        <table style="font-size:11.5px;min-width:600px">
+          <thead>
+            <tr style="background:transparent">
+              <th style="text-align:left;padding:6px 10px;color:var(--ink-soft);font-weight:500">Day</th>
+              <th style="text-align:left;padding:6px 10px;color:var(--ink-soft);font-weight:500">Stage</th>
+              <th style="text-align:center;padding:6px 10px;color:var(--ink-soft);font-weight:500">Water</th>
+              <th style="text-align:center;padding:6px 10px;color:var(--ink-soft);font-weight:500">Food</th>
+              <th style="text-align:left;padding:6px 8px;color:var(--ink-soft);font-weight:500">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:7px 10px">D1</td><td>Le Puy → Montbonnet</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td><td style="padding:7px 8px;color:#6b5e52">Resupply in Le Puy before leaving.</td></tr>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:7px 10px">D2</td><td>Montbonnet → Saugues</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td><td style="padding:7px 8px;color:#6b5e52">Saint-Privat-d'Allier and Monistrol-d'Allier both have cafés. Full services in Saugues.</td></tr>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:7px 10px">D3</td><td>Saugues → Sauvage</td><td style="text-align:center">⚠️</td><td style="text-align:center">⚠️</td><td style="padding:7px 8px;color:#6b5e52">La Chapelle-Saint-Roch (3km past Sauvage) has water. No food beyond Saugues. Sauvage provides dinner.</td></tr>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:7px 10px">D4</td><td>Sauvage → Aumont-Aubrac</td><td style="text-align:center">✅</td><td style="text-align:center">⚠️</td><td style="padding:7px 8px;color:#6b5e52">Saint-Alban (~9km) has café and small grocery. Aumont-Aubrac has a supermarket.</td></tr>
+            <tr style="border-top:1px solid var(--border);background:rgba(192,57,43,0.03)"><td style="padding:7px 10px"><strong>D5</strong></td><td><strong>Aumont-Aubrac → Nasbinals</strong></td><td style="text-align:center">⚠️</td><td style="text-align:center">❌</td><td style="padding:7px 8px;color:#c0392b"><strong>26km with essentially no services.</strong> Les 4 Chemins (~5km) has a café but may be seasonal. Stock food and fill water before leaving AA.</td></tr>
+            <tr style="border-top:1px solid var(--border);background:rgba(192,57,43,0.03)"><td style="padding:7px 10px"><strong>D6</strong></td><td><strong>Nasbinals → Saint-Côme</strong></td><td style="text-align:center">⚠️</td><td style="text-align:center">⚠️</td><td style="padding:7px 8px;color:#c0392b"><strong>Nasbinals → Saint-Chély (17km): plateau, no services.</strong> Aubrac village at 9km has a café. Saint-Chély has a small shop. Stock up at Nasbinals.</td></tr>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:7px 10px">D7</td><td>Saint-Côme → Estaing</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td><td style="padding:7px 8px;color:#6b5e52">Espalion (8km) is a proper town — good lunch stop, bakery, pharmacy.</td></tr>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:7px 10px">D8</td><td>Estaing → Conques</td><td style="text-align:center">✅</td><td style="text-align:center">⚠️</td><td style="padding:7px 8px;color:#6b5e52">Golinhac at ~22km. Limited between Estaing and Golinhac. Conques: tiny village, one épicerie.</td></tr>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:7px 10px">D9</td><td>Conques → Le Terly</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td><td style="padding:7px 8px;color:#6b5e52">Decazeville (~20km) is a proper town. Livinhac-le-Haut at ~24km. Figeac has full services.</td></tr>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:7px 10px">D10–D13</td><td>Rocamadour variant</td><td style="text-align:center">✅</td><td style="text-align:center">⚠️</td><td style="padding:7px 8px;color:#6b5e52">Villages are small. Rocamadour has full tourist services. Stock food at Lacapelle-Marival and Rocamadour.</td></tr>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:7px 10px">D14</td><td>Vers → Lascabannes</td><td style="text-align:center">✅</td><td style="text-align:center">✅</td><td style="padding:7px 8px;color:#6b5e52">Cahors (~17km, midday) has excellent restaurants and a supermarket. Stock up before Lascabannes.</td></tr>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:7px 10px">D15–D16</td><td>Lascabannes → Moissac</td><td style="text-align:center">✅</td><td style="text-align:center">⚠️</td><td style="padding:7px 8px;color:#6b5e52">Lauzerte has a small épicerie. Moissac has full services.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--ink-faint)">✅ reliable services &nbsp;·&nbsp; ⚠️ limited or seasonal &nbsp;·&nbsp; ❌ none on route</div>
+    </div>
+
+  </div>
+
+  <!-- TABLE -->
+  <div class="section-head"><h2>Stage breakdown</h2><div class="rule"></div></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Day</th><th>Date</th><th>Stage</th>
+          <th class="r">km</th>
+          <th class="r hide-mobile">↑ / ↓</th>
+          <th class="r">Moving time</th>
+          <th class="hide-mobile">Gîtes at destination</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <div class="footnote">
+    Stage distances: Days 1–4 and 8–16 from GPX (main GR65) and KML files (Rocamadour variant FR41/FR42). Days 5–7 from <a href="https://ilovewalkinginfrance.com" target="_blank">ilovewalkinginfrance.com</a> guidebook (Feb 2026) — the GPX routes differently to the waymarked GR65 in the Aubrac section. Moving times from pace model calibrated on your Strava data: Camino Francés 2022, TMB 2023, and BC hike streams. No rest or stops included. Gîte data from <a href="https://wisepilgrim.com" target="_blank">Wise Pilgrim</a> &amp; <a href="https://ilovewalkinginfrance.com" target="_blank">ilovewalkinginfrance.com</a>, early 2026. Map: <a href="https://www.openstreetmap.org" target="_blank">OpenStreetMap</a> contributors.
+  </div>
+</main>
+
+<footer class="footer">
+  <strong>GR65 · Le Puy-en-Velay → Moissac · April 2025</strong> &nbsp;·&nbsp; Strava-calibrated pace · Wise Pilgrim accommodation data
+</footer>
+
+<script>
+const STAGES = [
+  {day:1, date:"Apr 15", from:"Le Puy-en-Velay",      to:"Montbonnet",              km:16.7, gain:326,  loss:59,   variant:false, gites:3,  gite_note:"3 private gîtes (~44 beds)",                         warn:false, warn_msg:"", lat:45.0017, lon:3.8149},
+  {day:2, date:"Apr 16", from:"Montbonnet",            to:"Saugues",                 km:26.1, gain:970,  loss:913,  variant:false, gites:5,  gite_note:"1 municipal + 4 private gîtes",                      warn:false, warn_msg:"", lat:44.9622, lon:3.5400},
+  {day:3, date:"Apr 17", from:"Saugues",               to:"Domaine du Sauvage",      km:22.5, gain:608,  loss:272,  variant:false,  gites:1,  gite_note:"Gîte Le Sauvage — 41 beds, €18, communal half-board farm meals.",  warn:false, warn_msg:"", lat:44.8303, lon:3.4569},
+  {day:4, date:"Apr 18", from:"Domaine du Sauvage",    to:"Aumont-Aubrac",           km:25.1, gain:443,  loss:694,  variant:false,  gites:6,  gite_note:"6+ gîtes (Route d'Aubrac, Ferme du Barry, Chemin Faisant, La Ferme de l'Aubrac, others). Supermarket, pharmacy, Michelin-starred Cyril Attrazic.", warn:false, warn_msg:"", lat:44.7230, lon:3.2858},
+  {day:5, date:"Apr 19", from:"Aumont-Aubrac",         to:"Nasbinals",               km:26.1, gain:759,  loss:496,  variant:false,  gites:7,  gite_note:"7+ gîtes: NADA (38 beds, €12), Équestre (22, €40), Communal (19, €12–15), Lô D'ici (20, €30), La Grappière (15), Lo Fenador (10), Au Bon Repos (5). Hotels also available.", warn:false, warn_msg:"", lat:44.6580, lon:2.9929},
+  {day:6, date:"Apr 20", from:"Nasbinals",             to:"Saint-Côme-d'Olt",        km:33.4, gain:582,  loss:1535, variant:false,  gites:4,  gite_note:"4+ gîtes & chambres d'hôtes. Municipal gîte with views of the famous twisted steeple. One of France's Plus Beaux Villages.", warn:false, warn_msg:"", lat:44.5036, lon:2.8289},
+  {day:7, date:"Apr 21", from:"Saint-Côme-d'Olt",      to:"Estaing",                 km:20.5, gain:697,  loss:717,  variant:false,  gites:6,  gite_note:"1 municipal + 5 private gîtes (~83 beds). Estaing is one of France's Plus Beaux Villages — arrive early and take the afternoon.", warn:false, warn_msg:"", lat:44.5698, lon:2.6660},
+  {day:8, date:"Apr 22", from:"Estaing",               to:"Conques",                 km:35.7, gain:1165, loss:1193, variant:false, gites:5,  gite_note:"~5 gîtes + abbaye hostel — VERY LIMITED. Book immediately.",                                                                         warn:true,  warn_msg:"Conques is tiny and very popular even in April. Book as soon as your dates are confirmed — do not leave this one late.", lat:44.6003, lon:2.3969},
+  {day:9, date:"Apr 23", from:"Conques",               to:"Le Terly (Figeac)",       km:34.5, gain:1265, loss:1300, variant:false, gites:4,  gite_note:"~4 gîtes in Figeac area (Terly + Figeac). Check availability — 2 gîtes recently closed.",                                              warn:true,  warn_msg:"2 gîtes in the Figeac area recently closed. Verify accommodation at Le Terly or Figeac early.", lat:44.6088, lon:2.0320},
+  {day:10,date:"Apr 24", from:"Le Terly",              to:"Lacapelle-Marival",       km:22.8, gain:610,  loss:422,  variant:true, gites:3,  gite_note:"3 gîtes & chambres d'hôtes",                                                                                                         warn:false, warn_msg:"", lat:44.7289, lon:1.9238},
+  {day:11,date:"Apr 25", from:"Lacapelle-Marival",     to:"Rocamadour",              km:33.9, gain:320,  loss:521,  variant:true, gites:6,  gite_note:"~6 pilgrim gîtes & religious hospice",                                                                                                warn:false, warn_msg:"", lat:44.7991, lon:1.6196},
+  {day:12,date:"Apr 26", from:"Rocamadour",            to:"Labastide-Murat",         km:27.7, gain:740,  loss:551,  variant:true, gites:3,  gite_note:"3 gîtes & chambres d'hôtes",                                                                                                         warn:false, warn_msg:"", lat:44.6478, lon:1.5663},
+  {day:13,date:"Apr 27", from:"Labastide-Murat",       to:"Vers",                    km:24.0, gain:263,  loss:571,  variant:true, gites:2,  gite_note:"2 gîtes (small village)",                                                                                                            warn:false, warn_msg:"", lat:44.5042, lon:1.5575},
+  {day:14,date:"Apr 28", from:"Vers",                  to:"Lascabannes (via Cahors)", km:33.4, gain:766, loss:614,  variant:false,  gites:2,  gite_note:"2 gîtes at Lascabannes (hamlet). Cahors overnight no longer — stop for lunch, Pont Valentré, old town.",                               warn:false, warn_msg:"", lat:44.3629, lon:1.3733},
+  {day:15,date:"Apr 29", from:"Lascabannes",           to:"Lauzerte",                km:32.6, gain:783,  loss:857,  variant:false, gites:4,  gite_note:"4 gîtes & chambres d'hôtes",                                                                                                         warn:false, warn_msg:"", lat:44.2591, lon:1.1367},
+  {day:16,date:"Apr 30", from:"Lauzerte",              to:"Moissac",                 km:28.3, gain:595,  loss:735,  variant:false, gites:6,  gite_note:"~6 pilgrim gîtes + abbey hospice",                                                                                                    warn:false, warn_msg:"", lat:44.1003, lon:1.0842},
+];
+
+// Start point
+const START = {name:"Le Puy-en-Velay", lat:45.0439, lon:3.8851};
+
+const PROFILES = {
+  1:[637,634,646,669,683,696,711,718,728,735,741,758,766,770,763,759,760,765,770,778,791,810,831,856,862,865,870,875,878,881,884,903],
+  2:[903,912,927,936,952,972,1009,1045,1085,1126,1183,1205,1128,1060,994,929,872,878,900,938,940,925,775,768,690,629,601,652,739,806,849,907,968,1008,1030,1056,1070,960],
+  3:[954,942,930,930,934,938,938,952,977,992,994,1012,1019,1024,1025,1023,1037,1041,1051,1065,1073,1068,1060,1066,1051,1044,1063,1074,1078,1090,1092,1094,1099,1105,1097,1105,1117,1128,1141,1149,1144,1137,1142,1155,1153,1150,1146,1128,1109,1092,1104,1114,1151,1126,1109,1104,1110,1117,1129,1130,1137,1155,1168,1177,1172,1183,1184,1197,1206,1217,1222,1238,1271,1312,1323,1312,1294,1302,1296,1293,1289,1302,1302,1304,1307,1322,1314,1307,1306,1304,1290],
+  4:[1291,1293,1281,1260,1251,1236,1230,1230,1209,1190,1157,1165,1186,1201,1194,1173,1160,1140,1128,1111,1105,1093,1086,1059,1039,1019,1007,1019,1026,1022,1016,1012,987,968,958,945,928,937,952,978,978,963,949,931,917,932,944,960,978,1013,1020,1036,1026,1021,1020,1025,1033,1029,1022,1020,1004,991,971,942,933,961,999,996,977,982,987,983,990,1016,1041,1049,1052,1063,1088,1095,1103,1085,1077,1066,1040],
+  5:[1040,1037,1064,1052,1015,1044,1067,1093,1108,1142,1155,1163,1156,1167,1180,1198,1197,1257,1222,1195,1168,1151,1195,1189,1206,1174,1181,1215,1242,1216,1272,1295],
+  6:[1302,1305,1328,1358,1305,1314,1264,1192,1175,1120,1083,1024,917,828,795,866,889,917,909,862,825,773,699,573,489,414,518,510,504,443,392,370],
+  7:[350,346,399,437,520,456,467,466,426,341,336,334,333,357,342,360,436,491,475,492,483,422,374,345,333,326,346,322,312,333,313,319],
+  8:[301,241,270,341,413,510,564,600,601,552,589,621,617,546,582,511,476,337,280,236,240,313,347,266,192,231,322,382,375,281,288,342,375,318,199],
+  9:[192,195,200,204,209,225,224,230,221,229,233,244,239,243,243,253,259,258,257,264,266,271,303,336,350,372,377,376,376,379,353,350,353,367,365,366,372,371,357,368,362,359,331,324,336,354,372,368,349,353,349,340,344,344,352,373,396,415,432,437,430,427,416,426,429,434,440,453,463,485,501,519,549,541,542,535,525,530,544,523,508,493,505,511,522,530,539,544,552,548,531,508,487,447,420,402,387,380],
+  10:[380,367,362,395,375,392,387,381,362,348,358,409,409,365,356,349,343,331,331,326,332,324,315,342,352,360,350,346,340,339,330,324,332,329,328,330,340,336,336,335,330,337,342,329,315,311,310,302,302,299,288,292,291,293,286,299,300,315,311,301,302,305,301,304,305,312,319,312,301,287,275,267,246,236,211,200,201,201,193,180,203,173,169,159,166,154,153,158,154,146,158,179],
+  11:[258,253,239,263,260,261,259,248,242,233,226,212,199,173,159,147,169,200,186,242,262,261,260,258,244,208,193,215,238,261,274,278,295,298,292,273,267,244,198,189,198,203,207,232,281,320,300,314,315,303,300,332,354,362,352,331,322,287,290,321,344,355,343,341,359,370,364,356,340,305,299,304,311,313,324,359,381,388,412,405,384,393,393,402,416,440,447],
+  12:[443,434,415,393,371,346,336,324,318,315,302,292,284,281,277,266,280,319,332,361,372,379,373,372,391,403,404,409,408,407,409,389,387,373,363,369,378,362,351,352,355,355,354,361,353,344,332,329,314,302,288,260,241,231,209,200,205,204,198,192,197,189,192,193,192,189,190,182,177,184,177,195,183,170,171,174,172,174,172,174,164,174,162,168,167,155,161,154,157,156,158,149,152,159,159,144,135],
+  13:[132,139,135,135,141,151,152,151,149,155,178,189,207,196,217,216,215,212,204,203,201,199,193,195,204,206,205,232,267,288,288,284,292,288,275,242,226,205,204,204,199,187,169,160,155,151,140,129,125,120,121,122,122,124,123,119,121,127,132,126,119,118,119,119,119,121,121,120,121,119,118,118,119,120,121,129,128,134,127,126,125,123,126,125,122,118,118,117,118,117,124,126,134,133,130],
+  14:[127,118,119,146,191,218,239,214,182,142,144,152,160,220,224,194,155,152,208,251,276,283,292,294,286,284,272,262,269,274,286,282],
+  15:[127,124,118,121,142,174,213,225,218,233,224,197,154,141,144,152,160,219,226,239,257,274,285,303,293,286,279],
+  16:[282,277,268,266,272,277,270,259,270,237,200,178,177,191,225,263,275,253,225,209,243,267,248,190,162,225,263,212,158,129]
+};
+
+function mt(km, gain, loss) {
+  // Pace model calibrated from Strava data: Camino Francés 2022 (22 days, 5.06 km/h avg),
+  // TMB 2023 (5 days, 4.30 km/h avg), + grade/speed streams from BC hikes (Howe Sound, Hanes Valley, etc).
+  // Regression: speed = 5.36 - 0.0185*(gain/km) - 0.004*(loss/km). Floor 3.0 km/h.
+  const l = loss || 0;
+  const spd = Math.max(5.36 - 0.0185 * (gain / km) - 0.004 * (l / km), 3.0);
+  return km / spd;
+}
+function fmtT(h) {
+  const hh=Math.floor(h), mm=Math.round((h-hh)*60);
+  return mm===60?`${hh+1}h 00m`:`${hh}h ${String(mm).padStart(2,'0')}m`;
+}
+
+// ── LEAFLET MAP ──────────────────────────────────────
+const map = L.map('routeMap', {scrollWheelZoom: false}).setView([44.4, 2.5], 7);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 18,
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+}).addTo(map);
+
+// GPX tracks — real route geometry from uploaded GPX + KML files
+// Seg 1: Le Puy → Figeac (main GR65, pre-variant)
+const GPX_SEG1 = [[45.04394, 3.88288], [45.04098, 3.87318], [45.03013, 3.863], [45.01994, 3.83393], [45.01634, 3.8374], [45.01204, 3.82603], [44.9963, 3.81942], [44.98542, 3.79101], [44.9812, 3.76041], [44.98594, 3.74741], [44.99095, 3.74271], [44.99844, 3.71975], [44.98776, 3.69804], [44.98733, 3.68744], [44.99288, 3.68365], [44.98573, 3.66377], [44.9862, 3.64793], [44.98063, 3.64774], [44.97771, 3.65393], [44.97266, 3.65622], [44.97166, 3.65282], [44.9707, 3.65636], [44.96837, 3.64325], [44.97324, 3.64048], [44.97345, 3.61777], [44.95881, 3.61098], [44.95559, 3.60256], [44.95808, 3.59297], [44.9491, 3.58188], [44.96044, 3.54695], [44.95018, 3.53262], [44.94318, 3.52788], [44.93859, 3.5297], [44.92659, 3.52071], [44.9188, 3.50484], [44.90999, 3.50528], [44.90775, 3.50197], [44.89429, 3.5001], [44.88819, 3.49432], [44.87462, 3.5029], [44.87179, 3.4952], [44.85834, 3.49309], [44.84469, 3.49861], [44.84104, 3.49511], [44.82996, 3.49608], [44.82194, 3.4809], [44.8267, 3.46725], [44.83101, 3.46657], [44.83039, 3.45712], [44.82059, 3.44259], [44.8144, 3.42362], [44.80425, 3.41246], [44.80551, 3.40901], [44.80243, 3.41104], [44.80202, 3.40073], [44.78963, 3.39177], [44.77967, 3.39147], [44.78228, 3.3882], [44.77749, 3.37937], [44.77911, 3.36789], [44.77637, 3.36373], [44.76111, 3.35587], [44.75376, 3.3583], [44.74617, 3.35017], [44.74143, 3.35313], [44.74083, 3.34573], [44.73404, 3.33993], [44.73263, 3.33051], [44.72593, 3.33164], [44.72393, 3.32573], [44.72689, 3.30817], [44.72018, 3.29501], [44.72353, 3.28507], [44.71997, 3.28163], [44.71701, 3.28365], [44.70992, 3.27055], [44.70129, 3.26797], [44.69852, 3.26261], [44.71317, 3.23703], [44.71078, 3.22447], [44.71326, 3.2231], [44.70666, 3.19939], [44.70341, 3.16804], [44.68768, 3.15032], [44.67735, 3.11024], [44.65505, 3.09035], [44.65899, 3.06684], [44.6574, 3.05799], [44.66265, 3.04453], [44.65395, 3.00733], [44.64937, 3.00466], [44.64792, 2.99125], [44.64404, 2.98639], [44.63366, 2.99429], [44.62833, 2.98863], [44.62159, 2.98769], [44.6178, 2.96878], [44.61033, 2.96414], [44.60166, 2.95251], [44.5902, 2.92012], [44.5887, 2.9223], [44.57792, 2.91852], [44.57588, 2.90635], [44.5714, 2.90445], [44.55958, 2.88627], [44.56079, 2.87603], [44.55673, 2.86746], [44.53437, 2.84918], [44.53301, 2.85407], [44.52872, 2.84633], [44.53128, 2.84212], [44.5286, 2.83183], [44.52582, 2.83349], [44.51651, 2.81657], [44.51227, 2.81615], [44.50337, 2.79235], [44.50524, 2.78499], [44.50921, 2.78681], [44.51638, 2.78089], [44.51372, 2.7763], [44.51586, 2.77275], [44.52268, 2.77185], [44.52118, 2.76425], [44.52577, 2.75783], [44.52642, 2.75022], [44.52394, 2.74864], [44.52828, 2.73541], [44.52583, 2.72822], [44.53281, 2.70973], [44.54086, 2.70887], [44.5415, 2.70384], [44.53822, 2.7006], [44.54073, 2.69173], [44.53752, 2.6894], [44.54275, 2.68049], [44.54873, 2.6863], [44.54886, 2.67921], [44.55436, 2.67258], [44.54789, 2.6718], [44.54715, 2.6665], [44.56418, 2.65877], [44.56434, 2.63235], [44.58576, 2.61612], [44.58884, 2.60074], [44.59466, 2.59752], [44.59477, 2.58647], [44.60479, 2.58348], [44.60328, 2.56986], [44.60583, 2.55695], [44.59937, 2.53378], [44.60629, 2.51633], [44.61259, 2.51307], [44.60491, 2.4994], [44.60414, 2.49153], [44.60703, 2.46136], [44.61301, 2.45519], [44.60862, 2.44823], [44.61178, 2.43021], [44.60444, 2.41654], [44.60498, 2.40802], [44.60186, 2.40252], [44.60013, 2.40496], [44.59636, 2.38733], [44.59323, 2.3878], [44.59098, 2.37607], [44.5795, 2.3759], [44.57418, 2.38658], [44.56536, 2.37639], [44.57025, 2.34991], [44.5602, 2.31033], [44.55977, 2.298], [44.56505, 2.2728], [44.56408, 2.24663], [44.57288, 2.24571], [44.58264, 2.22429], [44.58988, 2.23242], [44.59468, 2.22665], [44.60999, 2.22359], [44.61662, 2.20481], [44.61932, 2.18217], [44.61685, 2.18003], [44.61998, 2.17418], [44.61931, 2.16857], [44.61348, 2.16436], [44.61962, 2.15924], [44.62193, 2.14755], [44.62579, 2.14989], [44.62622, 2.14373], [44.62344, 2.12656], [44.60953, 2.11745], [44.62001, 2.10758], [44.61506, 2.08983], [44.6116, 2.08667], [44.60794, 2.03431]];
+// Variant: Figeac → Rocamadour → Labastide → Vers → Cahors (KML FR42a + FR41a)
+const GPX_VARIANT = [[44.60736, 2.03107], [44.63795, 2.02819], [44.6502, 2.0169], [44.65728, 2.01527], [44.6618, 2.00677], [44.66476, 2.01012], [44.67071, 2.00819], [44.67404, 2.00102], [44.68319, 1.99458], [44.67907, 1.98523], [44.68206, 1.9818], [44.68691, 1.98308], [44.69244, 1.96811], [44.7007, 1.97652], [44.70314, 1.97227], [44.70107, 1.96184], [44.70638, 1.95399], [44.71187, 1.95442], [44.71263, 1.94927], [44.72059, 1.94249], [44.72843, 1.92262], [44.72022, 1.90717], [44.72068, 1.88369], [44.72449, 1.87644], [44.73562, 1.87485], [44.73611, 1.86176], [44.74537, 1.84936], [44.73964, 1.82752], [44.74842, 1.82387], [44.74818, 1.79928], [44.76765, 1.76778], [44.77524, 1.73812], [44.77445, 1.72757], [44.77892, 1.72121], [44.77862, 1.69984], [44.78648, 1.68388], [44.78776, 1.67366], [44.80079, 1.65783], [44.79921, 1.64307], [44.79479, 1.64053], [44.8025, 1.62375], [44.79772, 1.61697], [44.80497, 1.62554], [44.8046, 1.62262], [44.8013, 1.61662], [44.79499, 1.6154], [44.79553, 1.61088], [44.78809, 1.60857], [44.78129, 1.61754], [44.77627, 1.61257], [44.76536, 1.61615], [44.76098, 1.59694], [44.75557, 1.60431], [44.75052, 1.59361], [44.7404, 1.587], [44.73147, 1.59529], [44.73227, 1.59008], [44.72269, 1.58928], [44.72503, 1.57577], [44.72167, 1.56771], [44.71642, 1.56839], [44.71232, 1.57448], [44.70509, 1.56228], [44.69129, 1.56513], [44.68601, 1.56267], [44.68049, 1.56955], [44.67092, 1.57417], [44.65929, 1.57553], [44.65354, 1.56852], [44.64769, 1.56799], [44.63, 1.55296], [44.62051, 1.55094], [44.61572, 1.5435], [44.60785, 1.54386], [44.60742, 1.53809], [44.59312, 1.52152], [44.59181, 1.52502], [44.5687, 1.53699], [44.56383, 1.53405], [44.55416, 1.53637], [44.54312, 1.53451], [44.54032, 1.54088], [44.54268, 1.55111], [44.53628, 1.55798], [44.5281, 1.55446], [44.52709, 1.55723], [44.51438, 1.55903], [44.50523, 1.55504], [44.49889, 1.55899], [44.4958, 1.55399], [44.49133, 1.55768], [44.48409, 1.55159], [44.47697, 1.5585], [44.47458, 1.5547], [44.46446, 1.55307], [44.45519, 1.54802], [44.46095, 1.54322], [44.45829, 1.52421], [44.46071, 1.51678], [44.45648, 1.49453], [44.47389, 1.46854], [44.46644, 1.44771], [44.4564, 1.44704], [44.45601, 1.44332], [44.44909, 1.44506], [44.44588, 1.4411]];
+// Seg 2: Cahors → Moissac (main GR65, post-variant)
+const GPX_SEG2 = [[44.44705, 1.44127], [44.44455, 1.43006], [44.438, 1.43318], [44.4371, 1.42653], [44.42802, 1.42968], [44.42847, 1.42372], [44.42354, 1.41618], [44.41712, 1.41862], [44.41666, 1.4296], [44.41292, 1.42897], [44.40382, 1.41093], [44.39058, 1.40332], [44.3847, 1.39402], [44.36331, 1.38861], [44.35703, 1.36895], [44.35761, 1.36149], [44.35031, 1.35253], [44.34759, 1.3372], [44.33936, 1.32352], [44.34271, 1.31433], [44.33903, 1.30971], [44.33984, 1.3058], [44.34789, 1.28658], [44.34383, 1.26838], [44.34585, 1.25385], [44.34284, 1.25381], [44.34298, 1.2497], [44.33524, 1.24307], [44.33869, 1.23733], [44.34064, 1.23945], [44.34311, 1.23061], [44.3374, 1.20705], [44.3313, 1.2054], [44.32592, 1.20947], [44.31681, 1.20369], [44.31169, 1.20943], [44.31019, 1.21874], [44.3005, 1.20512], [44.29627, 1.20585], [44.29151, 1.19199], [44.28179, 1.17776], [44.27958, 1.16152], [44.26901, 1.15636], [44.2548, 1.13582], [44.24885, 1.14742], [44.24177, 1.1533], [44.24168, 1.16233], [44.23329, 1.16593], [44.22953, 1.16337], [44.221, 1.16501], [44.21578, 1.1494], [44.20571, 1.15456], [44.20334, 1.15132], [44.19897, 1.15827], [44.19228, 1.15817], [44.19181, 1.15498], [44.1897, 1.15764], [44.18174, 1.15202], [44.17767, 1.15438], [44.18041, 1.12707], [44.17468, 1.1211], [44.16079, 1.11585], [44.15844, 1.11213], [44.15399, 1.11351], [44.15116, 1.12135], [44.14857, 1.11344], [44.12387, 1.11076], [44.11081, 1.1033], [44.10618, 1.09489], [44.10527, 1.0846], [44.10163, 1.08763], [44.09973, 1.08447]];
+
+L.polyline(GPX_SEG1,    {color:'#3a2a1a', weight:3, opacity:0.75, smoothFactor:1.5}).addTo(map);
+L.polyline(GPX_VARIANT, {color:'#b07030', weight:3, opacity:0.8,  dashArray:'7 4',  smoothFactor:1.5}).addTo(map);
+L.polyline(GPX_SEG2,    {color:'#3a2a1a', weight:3, opacity:0.75, smoothFactor:1.5}).addTo(map);
+
+function makeIcon(color, size=10) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:${size}px;height:${size}px;background:${color};border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.35)"></div>`,
+    iconSize:[size,size], iconAnchor:[size/2,size/2]
+  });
+}
+
+L.marker([START.lat, START.lon], {icon: makeIcon('#c8922a', 13)})
+  .addTo(map)
+  .bindPopup(`<strong>Le Puy-en-Velay</strong><br>Start — Apr 15`);
+
+// Stage end markers
+STAGES.forEach(s => {
+  const color = s.warn ? '#c0392b' : s.variant ? '#b07030' : '#3a2a1a';
+  const t = mt(s.km, s.gain, s.loss);
+  const popup = `<strong>D${s.day}: ${s.to}</strong><br>${s.date}<br>${s.km.toFixed(1)} km · ${fmtT(t)}<br>↑${s.gain}m / ↓${s.loss}m<br><span style="font-size:11px;color:#666">${s.gite_note}</span>${s.warn?`<br><span style="color:#c0392b;font-size:11px">⚠ ${s.warn_msg}</span>`:''}`;
+  L.marker([s.lat, s.lon], {icon: makeIcon(color, s.warn?13:11)})
+    .addTo(map)
+    .bindPopup(popup);
+});
+
+// ── TABLE ──────────────────────────────────────────
+const tbody = document.getElementById('tableBody');
+STAGES.forEach(s => {
+  const cls = s.warn?'warn-row':s.variant?'variant-row':'';
+  const t = mt(s.km, s.gain, s.loss);
+  const varB  = s.variant?'<span class="badge b-variant">variant</span>':'';
+  const warnB = s.warn   ?'<span class="badge b-warn">book now</span>':'';
+
+  const extra = s.warn?`<div class="warn-banner">${s.warn_msg}</div>`:'';
+  const tr = document.createElement('tr');
+  if(cls) tr.className=cls;
+  tr.innerHTML=`
+    <td class="num">${s.day}</td>
+    <td class="date-cell">${s.date}</td>
+    <td>${s.from} → <strong>${s.to}</strong>${varB}${warnB}${extra}</td>
+    <td class="r num">${s.km.toFixed(1)}</td>
+    <td class="r ele-cell hide-mobile">+${s.gain}m / −${s.loss}m</td>
+    <td class="r time-cell">${fmtT(t)}</td>
+    <td style="font-size:11.5px" class="hide-mobile">${s.gites} <span style="color:#8b7060">(${s.gite_note})</span></td>
+  `;
+  tbody.appendChild(tr);
+});
+[{d:"May 1",n:"Train → Bordeaux"},{d:"May 2",n:"Fly → Milan"}].forEach(r=>{
+  const tr=document.createElement('tr');tr.style.background='#f9f6f2';
+  tr.innerHTML=`<td style="color:#b0a090;font-style:italic">—</td><td class="date-cell">${r.d}</td><td colspan="5" style="color:#a89880;font-style:italic">${r.n} <span class="badge b-travel">travel</span></td>`;
+  tbody.appendChild(tr);
+});
+
+// ── BAR CHART (stacked distance) ──────────────────
+new Chart(document.getElementById('barChart'),{
+  type:'bar',
+  data:{
+    labels:STAGES.map(s=>`D${s.day}`),
+    datasets:[{
+      data:STAGES.map(s=>s.km),
+      backgroundColor:STAGES.map(s=>s.variant?'rgba(176,112,48,0.75)':'rgba(58,42,26,0.82)'),
+      borderRadius:3,borderWidth:0
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{
+      title:ctx=>`D${STAGES[ctx[0].dataIndex].day}: ${STAGES[ctx[0].dataIndex].from} → ${STAGES[ctx[0].dataIndex].to}`,
+      label:ctx=>` ${ctx.raw.toFixed(1)} km · ↑${STAGES[ctx[0].dataIndex].gain}m ↓${STAGES[ctx[0].dataIndex].loss}m`
+    }}},
+    scales:{
+      x:{grid:{display:false},ticks:{font:{size:10},color:'#8b7060'}},
+      y:{beginAtZero:true,max:40,grid:{color:'rgba(90,70,50,0.08)'},ticks:{font:{size:10},color:'#8b7060',callback:v=>v+'km'}}
+    }
+  }
+});
+
+// ── GAIN/LOSS CHART (stacked up/down) ─────────────
+new Chart(document.getElementById('gainChart'),{
+  type:'bar',
+  data:{
+    labels:STAGES.map(s=>`D${s.day}`),
+    datasets:[
+      {label:'Ascent',data:STAGES.map(s=>s.gain),backgroundColor:'rgba(192,57,43,0.65)',borderRadius:2,borderWidth:0,stack:'gl'},
+      {label:'Descent',data:STAGES.map(s=>-s.loss),backgroundColor:'rgba(26,107,74,0.55)',borderRadius:2,borderWidth:0,stack:'gl'}
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:10,padding:8,color:'#6b5e52'}},
+      tooltip:{callbacks:{
+        title:ctx=>`D${STAGES[ctx[0].dataIndex].day}`,
+        label:ctx=>ctx.dataset.label==='Ascent'?` ↑${ctx.raw}m`:` ↓${Math.abs(ctx.raw)}m`
+      }}
+    },
+    scales:{
+      x:{grid:{display:false},ticks:{font:{size:10},color:'#8b7060'},stacked:true},
+      y:{grid:{color:'rgba(90,70,50,0.08)'},ticks:{font:{size:10},color:'#8b7060',callback:v=>Math.abs(v)+'m'},stacked:true}
+    }
+  }
+});
+
+// ── TIME CHART ─────────────────────────────────────
+new Chart(document.getElementById('timeChart'),{
+  type:'bar',
+  data:{
+    labels:STAGES.map(s=>`D${s.day}`),
+    datasets:[{
+      data:STAGES.map(s=>mt(s.km,s.gain,s.loss)),
+      backgroundColor:STAGES.map(s=>{const t=mt(s.km,s.gain,s.loss);return t>=8?'rgba(192,57,43,0.7)':t>=6?'rgba(176,112,48,0.6)':'rgba(46,107,74,0.65)';}),
+      borderRadius:3,borderWidth:0
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{
+      title:ctx=>`Day ${STAGES[ctx[0].dataIndex].day}`,
+      label:ctx=>` ${fmtT(ctx.raw)} moving`
+    }}},
+    scales:{
+      x:{grid:{display:false},ticks:{font:{size:10},color:'#8b7060'}},
+      y:{beginAtZero:true,max:10,grid:{color:'rgba(90,70,50,0.08)'},ticks:{font:{size:10},color:'#8b7060',callback:v=>v+'h',stepSize:2}}
+    }
+  }
+});
+
+// ── CUMUL CHART ────────────────────────────────────
+let c=0;
+new Chart(document.getElementById('cumulChart'),{
+  type:'line',
+  data:{
+    labels:STAGES.map(s=>`D${s.day}`),
+    datasets:[{
+      data:STAGES.map(s=>{c+=s.km;return parseFloat(c.toFixed(1));}),
+      borderColor:'#7a4f2a',backgroundColor:'rgba(122,79,42,0.08)',
+      borderWidth:2,pointRadius:3,pointBackgroundColor:'#7a4f2a',fill:true,tension:0.35
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{title:ctx=>`After day ${ctx[0].label.slice(1)}`,label:ctx=>` ${ctx.raw.toFixed(1)} km total`}}},
+    scales:{
+      x:{grid:{display:false},ticks:{font:{size:10},color:'#8b7060'}},
+      y:{beginAtZero:true,grid:{color:'rgba(90,70,50,0.08)'},ticks:{font:{size:10},color:'#8b7060',callback:v=>v+'km'}}
+    }
+  }
+});
+
+// ── ELEVATION TABS ─────────────────────────────────
+// Waypoints: named landmarks at approximate % distance through each stage profile
+const WAYPOINTS = {
+  1:[{pct:0.5,label:'Le Chier'}],
+  2:[{pct:0.38,label:'Saint-Privat'},{pct:0.65,label:'Monistrol'}],
+  3:[{pct:0.45,label:'Villeret'},{pct:0.85,label:'La Chapelle'}],
+  4:[{pct:0.35,label:'Saint-Alban'},{pct:0.75,label:'Les Faux'}],
+  5:[{pct:0.4,label:'La Chaze'},{pct:0.7,label:'Montgros'}],
+  6:[{pct:0.25,label:'Aubrac vill.'},{pct:0.52,label:'Saint-Chély'},{pct:0.75,label:'Espalion'}],
+  7:[{pct:0.39,label:'Espalion'},{pct:0.78,label:'Bessuéjouls'}],
+  8:[{pct:0.35,label:'Golinhac'},{pct:0.62,label:'Espeyrac'}],
+  9:[{pct:0.32,label:'Decazeville'},{pct:0.58,label:'Livinhac'},{pct:0.82,label:'Montredon'}],
+  10:[{pct:0.55,label:'Faycelles'}],
+  11:[{pct:0.45,label:'Gramat'},{pct:0.78,label:"L'Hospitalet"}],
+  12:[{pct:0.5,label:'Cras'}],
+  13:[{pct:0.5,label:'Montcuq'}],
+  14:[{pct:0.52,label:'Cahors'},{pct:0.8,label:'Vaylats'}],
+  15:[{pct:0.4,label:'Montcuq'},{pct:0.72,label:'Durfort'}],
+  16:[{pct:0.45,label:'Bourg-de-Visa'}],
+};
+
+const tabsEl=document.getElementById('eleTabs');
+let eleInst=null;
+STAGES.forEach((s,i)=>{
+  const btn=document.createElement('button');
+  btn.className='ele-tab'+(i===0?' active':'')+(s.warn?' warn-tab':'')+(s.variant?' variant-tab':'');
+  btn.textContent=`D${s.day}`;
+  btn.onclick=()=>{document.querySelectorAll('.ele-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');drawEle(s);};
+  tabsEl.appendChild(btn);
+});
+
+function drawEle(s){
+  if(eleInst)eleInst.destroy();
+  const prof=PROFILES[s.day]||[];
+  const n=prof.length;
+  const color=s.warn?'#c0392b':s.variant?'#b07030':'#3a2a1a';
+  const bg=s.warn?'rgba(192,57,43,0.07)':s.variant?'rgba(176,112,48,0.08)':'rgba(58,42,26,0.06)';
+
+  // Build waypoint annotations
+  const wpts = (WAYPOINTS[s.day]||[]).map(w=>({
+    type:'line', xMin:Math.round(w.pct*(n-1)), xMax:Math.round(w.pct*(n-1)),
+    borderColor:'rgba(90,70,50,0.3)', borderWidth:1, borderDash:[3,3],
+    label:{content:w.label, enabled:true, position:'start',
+      font:{size:9}, color:'#6b5e52', backgroundColor:'rgba(255,255,255,0.8)',
+      padding:2, yAdjust:-2}
+  }));
+
+  // Register annotation plugin inline if not already registered
+  const plugins = {};
+  if(wpts.length && typeof Chart !== 'undefined' && Chart.registry) {
+    plugins.annotation = {annotations: wpts};
+  }
+
+  eleInst=new Chart(document.getElementById('eleChart'),{
+    type:'line',
+    data:{
+      labels:prof.map((_,i)=>i),
+      datasets:[{
+        data:prof, borderColor:color, backgroundColor:bg,
+        borderWidth:2, pointRadius:0, fill:true, tension:0.3
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{
+          title:ctx=>{
+            const pct=ctx[0].dataIndex/(n-1);
+            const km=(pct*s.km).toFixed(1);
+            return `~${km} km`;
+          },
+          label:ctx=>` ${ctx.raw}m`
+        }},
+        ...plugins
+      },
+      scales:{
+        x:{display:false},
+        y:{grid:{color:'rgba(90,70,50,0.08)'},ticks:{font:{size:10},color:'#8b7060',callback:v=>v+'m'}}
+      }
+    }
+  });
+
+  // Waypoint labels drawn as canvas overlays
+  const t=mt(s.km,s.gain,s.loss);
+  const wptHtml=(WAYPOINTS[s.day]||[]).map(w=>{
+    const pct=w.pct*100;
+    return `<span style="position:absolute;left:${pct}%;transform:translateX(-50%);font-size:10px;color:#8b7060;white-space:nowrap">${w.label}</span>`;
+  }).join('');
+
+  document.getElementById('eleWpts').innerHTML=wptHtml;
+  document.getElementById('eleStats').innerHTML=`
+    <span><strong>${s.from}</strong> → <strong>${s.to}</strong></span>
+    <span>↑ <strong>${s.gain}m</strong></span>
+    <span>↓ <strong>${s.loss}m</strong></span>
+    <span>Start <strong>${prof[0]}m</strong> · End <strong>${prof[prof.length-1]}m</strong></span>
+    <span>Moving: <strong>${fmtT(t)}</strong></span>
+  `;
+}
+drawEle(STAGES[0]);
+</script>
+</body>
+</html>
