@@ -1629,9 +1629,9 @@ async function fetchTab(tabName) {
   const res = await fetch(`${BASE_URL}/${encodeURIComponent(tabName)}?key=${API_KEY}`);
   if (!res.ok) throw new Error(`Sheet fetch failed: ${tabName} (${res.status})`);
   const json = await res.json();
-  const [headers, ...rows] = json.values || [];
+  const [headers, _desc, ...rows] = json.values || []; // skip row 2 (units/description)
   if (!headers) return [];
-  return rows.map(row => {
+  return rows.filter(row => row.length && row[0] && row[0] !== 'YYYY-MM-DD').map(row => {
     const obj = {};
     headers.forEach((h, i) => {
       const v = row[i];
