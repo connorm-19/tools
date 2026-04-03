@@ -502,42 +502,47 @@ function dayNum(d) { return new Date(d).getTime()/86400000; }
 
 // Weight ensemble (6-window)
 function getWeightTrend() {
-  // Ensemble rate: weighted average of 4 windows (7d/30d/45d/90d)
-  // Weighted heavily towards longer windows — GLP-1 loss is steady and
-  // longer trends carry more signal than short-term noise/glycogen swings.
-  // Each base weight is further scaled by R² (fit quality) before mixing.
-  // Final base mix: 7d=8%, 30d=22%, 45d=30%, 90d=40%
+  // Ensemble rate: 6 windows (7d/14d/30d/45d/60d/90d)
+  // Short windows (7d/14d) included but kept low so they inform without dominating.
+  // Dominant signal from 60d/90d — appropriate for steady GLP-1-assisted loss.
+  // Per-window rates capped at ±1.5 lbs/wk before mixing — prevents a sparse
+  // 4-reading week (e.g. post-race water drop) from blowing up the ensemble.
+  // Each base weight further scaled by R² before mixing, then ensemble capped ±2 lbs/wk.
+  // Base mix: 7d=4%, 14d=6%, 30d=12%, 45d=18%, 60d=24%, 90d=36%
   const WINDOWS = [
-    { days:  7, baseW: 0.08 },
-    { days: 30, baseW: 0.22 },
-    { days: 45, baseW: 0.30 },
-    { days: 90, baseW: 0.40 },
+    { days:  7, baseW: 0.04 },
+    { days: 14, baseW: 0.06 },
+    { days: 30, baseW: 0.12 },
+    { days: 45, baseW: 0.18 },
+    { days: 60, baseW: 0.24 },
+    { days: 90, baseW: 0.36 },
   ];
   const today = dayNum(new Date().toISOString().slice(0,10));
   const weights = RAW.weight;
   let totalW = 0, weightedSlope = 0;
-  const windowRates = {}; // expose per-window rates for debug/display
+  const windowRates = {};
 
   WINDOWS.forEach(({ days, baseW }) => {
     const sub = weights.filter(r => dayNum(r.date) >= today - days);
-    if (sub.length < 3) return; // need at least 3 points for meaningful regression
+    if (sub.length < 3) return;
     const lr = linReg(sub.map(r => [dayNum(r.date), r.wt]));
     if (!lr) return;
-    // R² calculation
     const vals = sub.map(r => r.wt);
     const mean = vals.reduce((a,b)=>a+b,0)/vals.length;
     const ss   = vals.reduce((s,v)=>s+(v-mean)**2,0);
     const pred = sub.map(r => lr.slope*dayNum(r.date)+lr.intercept);
     const res  = sub.reduce((s,r,j)=>s+(r.wt-pred[j])**2,0);
     const r2   = ss > 0 ? Math.max(0, 1 - res/ss) : 0;
+    const rawRate = lr.slope * 7;
+    const cappedRate = Math.max(-1.5, Math.min(1.5, rawRate));
     const effW = baseW * r2;
-    weightedSlope += lr.slope * 7 * effW;
+    weightedSlope += cappedRate * effW;
     totalW += effW;
-    windowRates[days] = +(lr.slope * 7).toFixed(3);
+    windowRates[days] = +rawRate.toFixed(3);
   });
 
-  const ratePerWeek = totalW > 0 ? +(weightedSlope / totalW).toFixed(3) : -0.5;
-  // Current weight: trimmed mean of last 14 days (removes glycogen/water spikes)
+  const rawEnsemble = totalW > 0 ? +(weightedSlope / totalW).toFixed(3) : -0.5;
+  const ratePerWeek = Math.max(-2, Math.min(2, rawEnsemble));
   const recent14 = weights.filter(r => dayNum(r.date) >= today-14).map(r=>r.wt).sort((a,b)=>a-b);
   const trim = recent14.length >= 5 ? recent14.slice(1,-1) : recent14;
   const current = trim.length ? +(trim.reduce((a,b)=>a+b,0)/trim.length).toFixed(1) : weights[weights.length-1]?.wt;
