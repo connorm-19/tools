@@ -1679,6 +1679,7 @@ function mergeSheetData(sheetOura, sheetAH, sheetWeight, sheetStrava, sheetSleep
       avg_hr: n.avg_hr || null
     });
   });
+  RAW.strava.sort((a, b) => a.date > b.date ? -1 : 1);
 
   const slByDate2 = {}; AH_SLEEP.forEach(r => { slByDate2[r.d] = r; });
   sheetSleep.forEach(n => {
@@ -1702,7 +1703,7 @@ async function loadSheetData() {
   const el = document.getElementById('last-updated-ts');
   el.textContent = 'Loading live data…';
   try {
-    const [sheetOura, sheetAH, sheetWeight, sheetStrava, sheetSleep, sheetBreathing, sheetDiet] = await Promise.all([
+    const [sheetOura, sheetAH, sheetWeight, sheetStrava, sheetSleep, sheetBreathing, sheetDiet, sheetMeta] = await Promise.all([
       fetchTab('oura'),
       fetchTab('apple_health'),
       fetchTab('weight'),
@@ -1710,10 +1711,32 @@ async function loadSheetData() {
       fetchTab('sleep_detail'),
       fetchBreathingTab(),
       fetchTab('diet'),
+      fetchTab('meta').catch(() => []),
     ]);
     mergeSheetData(sheetOura, sheetAH, sheetWeight, sheetStrava, sheetSleep, sheetBreathing, sheetDiet);
-    const now = new Date().toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    el.textContent = `Live · Sheet sync: ${now}`;
+    // Find the most recent date across all data tabs
+    const allDates = [
+      ...sheetOura.map(r => r.date),
+      ...sheetAH.map(r => r.date),
+      ...sheetWeight.map(r => r.date),
+      ...sheetStrava.map(r => r.date),
+      ...sheetSleep.map(r => r.date),
+      ...sheetDiet.map(r => r.date),
+    ].filter(Boolean).sort();
+    const lastDate = allDates.length ? allDates[allDates.length - 1] : null;
+    const lastDateStr = lastDate
+      ? new Date(lastDate + 'T12:00:00').toLocaleString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })
+      : '—';
+    // Read sync time from meta tab if available, otherwise fall back to now
+    const metaRow = sheetMeta && sheetMeta.length ? sheetMeta[sheetMeta.length - 1] : null;
+    let syncTimeStr;
+    if (metaRow && metaRow.synced_at) {
+      const syncDt = new Date(metaRow.synced_at);
+      syncTimeStr = syncDt.toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } else {
+      syncTimeStr = new Date().toLocaleString('en-CA', { hour: '2-digit', minute: '2-digit' });
+    }
+    el.textContent = `Live · Last data: ${lastDateStr} · Synced ${syncTimeStr}`;
   } catch (err) {
     console.warn('Sheet fetch failed, using hardcoded data:', err);
     el.textContent = 'Oura: Apr 1 · AH: Apr 1 · Strava: Apr 1 · Weight: Apr 1 (offline)';
