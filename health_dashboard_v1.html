@@ -1656,22 +1656,33 @@ async function fetchBreathingTab() {
 
 function mergeSheetData(sheetOura, sheetAH, sheetWeight, sheetStrava, sheetSleep, sheetBreathing, sheetDiet) {
   const ouByDate = {}; RAW.oura.forEach(r => { ouByDate[r.date] = r; });
+  const OURA_REMAP = { readiness_score:'readiness', activity_cal_active:'activity_burn', activity_steps:'steps', temp_deviation:'temp_dev' };
+  const OURA_TO_S  = { sleep_total_h:'total_sleep_s', sleep_deep_h:'deep_sleep_s', sleep_rem_h:'rem_sleep_s' };
   sheetOura.forEach(n => {
     if (!ouByDate[n.date]) { ouByDate[n.date] = { date: n.date }; RAW.oura.push(ouByDate[n.date]); }
-    Object.entries(n).forEach(([k, v]) => { if (v != null) ouByDate[n.date][k] = v; });
+    Object.entries(n).forEach(([k, v]) => {
+      if (v == null) return;
+      if (OURA_TO_S[k]) { ouByDate[n.date][OURA_TO_S[k]] = v * 3600; return; }
+      ouByDate[n.date][OURA_REMAP[k] || k] = v;
+    });
   });
   RAW.oura.sort((a, b) => a.date < b.date ? -1 : 1);
 
   const ahByDate2 = {}; RAW.ah.forEach(r => { ahByDate2[r.date] = r; });
+  const AH_REMAP = { hrv_ms:'hrv', vo2max:'vo2' };
   sheetAH.forEach(n => {
     if (!ahByDate2[n.date]) { ahByDate2[n.date] = { date: n.date }; RAW.ah.push(ahByDate2[n.date]); }
-    Object.entries(n).forEach(([k, v]) => { if (v != null) ahByDate2[n.date][k] = v; });
+    Object.entries(n).forEach(([k, v]) => {
+      if (v == null) return;
+      if (k === 'weight_lbs') { ahByDate2[n.date].wt_kg = +(v / 2.20462).toFixed(2); return; }
+      ahByDate2[n.date][AH_REMAP[k] || k] = v;
+    });
   });
   RAW.ah.sort((a, b) => a.date < b.date ? -1 : 1);
 
   const wtDates2 = new Set(RAW.weight.map(r => r.date));
   sheetWeight.forEach(w => {
-    if (!wtDates2.has(w.date)) { RAW.weight.push({ date: w.date, wt: w.wt_lbs, src: w.src || 'Sheet' }); wtDates2.add(w.date); }
+    if (!wtDates2.has(w.date)) { RAW.weight.push({ date: w.date, wt: w.weight_lbs, src: w.src || 'Sheet' }); wtDates2.add(w.date); }
   });
   RAW.weight.sort((a, b) => a.date < b.date ? -1 : 1);
 
