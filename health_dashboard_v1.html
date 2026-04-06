@@ -1758,7 +1758,9 @@ async function loadSheetData() {
     console.warn('Sheet fetch failed, using hardcoded data:', err);
     el.textContent = 'Oura: Apr 1 · AH: Apr 1 · Strava: Apr 1 · Weight: Apr 1 (offline)';
   }
-  initToday();
+  todayInited = sleepInited = weightInited = activityInited = nutritionInited = trendsInited = false;
+  const activeTab = document.querySelector('.tab.active');
+  if (activeTab) activeTab.click(); else initToday();
 }
 
 loadSheetData();
