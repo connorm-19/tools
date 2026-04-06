@@ -967,8 +967,8 @@ function initWeight() {
   const GOAL = 160;
   const lost = START_WT - current;
   const remain = current - GOAL;
-  const weeksToGoal = remain > 0 ? (remain / Math.abs(ratePerWeek)).toFixed(0) : 0;
-  const goalDate = remain > 0 ? new Date(Date.now() + (remain/Math.abs(ratePerWeek))*7*86400000).toLocaleDateString('en-CA',{month:'short',year:'numeric'}) : 'Reached';
+  const weeksToGoal = (remain > 0 && ratePerWeek < -0.01) ? (remain / Math.abs(ratePerWeek)).toFixed(0) : '—';
+  const goalDate = (remain > 0 && ratePerWeek < -0.01) ? new Date(Date.now() + (remain/Math.abs(ratePerWeek))*7*86400000).toLocaleDateString('en-CA',{month:'short',year:'numeric'}) : (remain <= 0 ? 'Reached' : 'Stalled');
   const rateDetail = [7,30,45,90].filter(d=>windowRates[d]!=null).map(d=>`${d}d: ${windowRates[d]>0?'+':''}${windowRates[d]}`).join(' · ');
 
   document.getElementById('journey-hero').innerHTML = `
@@ -1070,7 +1070,7 @@ function initWeight() {
     options: deepMerge(CHART_DEFAULTS, {
       scales:{
         x:{type:'time',time:{unit:'month'},ticks:{color:'#9a9790',font:{size:11}}},
-        y:{ticks:{callback:v=>v+' lbs'},min:150,max:200}
+        y:{ticks:{callback:v=>v+' lbs'},min:Math.floor((current-15)/5)*5,max:Math.ceil((Math.max(...wPts.map(r=>r.wt),current+5)+10)/5)*5}
       },
       plugins:{
         legend:{display:true,position:'bottom',labels:{
@@ -1105,6 +1105,7 @@ function initWeight() {
   function milestoneETA(target) {
     const wtNow = latestWt.wt || current;
     if (wtNow <= target) return {label:'✓ Reached', done:true};
+    if (!ensRpD || ensRpD >= 0) return {label:'Rate stalled', done:false};
     const days = (wtNow - target) / Math.abs(ensRpD);
     const lo = new Date(Date.now() + days*0.8*86400000);
     const hi = new Date(Date.now() + days*1.2*86400000);
