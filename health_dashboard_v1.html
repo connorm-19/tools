@@ -944,7 +944,7 @@ function initSleep() {
   });
 
   // Breathing disturbances (Source: Apple Watch - consumer wellness metric, NOT clinical AHI)
-  const cutoff45_bd = new Date(Date.now()-180*86400000).toISOString().slice(0,10);
+  const cutoff45_bd = new Date(Date.now()-45*86400000).toISOString().slice(0,10);
 
   // Merge all dates from both Apple Watch (AH_BD) and Oura (RAW.oura BDI)
   const bdDatesSet = new Set([
