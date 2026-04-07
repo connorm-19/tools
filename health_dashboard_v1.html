@@ -984,10 +984,17 @@ function initSleep() {
       {
         label:"Oura Ring",
         data:ouraVals,
-        backgroundColor:ouraVals.map(v => v==null ? 'transparent' : v>4?'rgba(168,48,32,0.45)':v>2?'rgba(138,90,0,0.4)':'rgba(90,58,138,0.5)'),
-        borderColor:ouraVals.map(v => v==null ? 'transparent' : v>4?'rgba(168,48,32,0.75)':v>2?'rgba(138,90,0,0.65)':'rgba(90,58,138,0.8)'),
-        borderWidth:1,
-        borderRadius:3,
+        type:"line",
+        borderColor:"rgba(90,58,138,0.85)",
+        backgroundColor:"rgba(90,58,138,0.1)",
+        pointBackgroundColor:ouraVals.map(v=>v==null?'transparent':v>4?'rgba(168,48,32,0.9)':v>2?'rgba(138,90,0,0.85)':'rgba(90,58,138,0.85)'),
+        pointBorderColor:"transparent",
+        pointRadius:4,
+        pointHoverRadius:6,
+        borderWidth:1.5,
+        tension:0.3,
+        spanGaps:false,
+        fill:false,
         skipNull:true
       }
     ]},
