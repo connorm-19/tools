@@ -1683,7 +1683,14 @@ function mergeSheetData(sheetOura, sheetAH, sheetWeight, sheetStrava, sheetSleep
 
   const wtDates2 = new Set(RAW.weight.map(r => r.date));
   sheetWeight.forEach(w => {
-    if (!wtDates2.has(w.date)) { RAW.weight.push({ date: w.date, wt: w.weight_lbs, src: w.src || 'Sheet' }); wtDates2.add(w.date); }
+    const wtVal = w.wt_lbs ?? w.weight_lbs ?? w.wt;
+    if (!wtDates2.has(w.date) && wtVal != null) {
+      RAW.weight.push({ date: w.date, wt: +wtVal, src: w.src || 'Sheet' });
+      wtDates2.add(w.date);
+    } else if (wtDates2.has(w.date) && wtVal != null) {
+      const existing = RAW.weight.find(r => r.date === w.date);
+      if (existing && !existing.wt) existing.wt = +wtVal;
+    }
   });
   RAW.weight.sort((a, b) => a.date < b.date ? -1 : 1);
 
