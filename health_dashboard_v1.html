@@ -333,6 +333,7 @@
     </div>
     <div class="section-title">trend window rates</div>
     <div id="rate-summary"></div>
+    <div style="background:rgba(180,100,20,0.07);border:1px solid rgba(180,100,20,0.25);border-radius:var(--radius);padding:12px 16px;margin-bottom:16px;font-size:12.5px;color:var(--text2);line-height:1.6;"><span style="font-weight:600;color:#b46414;">🥾 GR65 Via Podiensis projection (Apr 15&#x2013;30)</span> — 450 km · 15 walking days · 9,500m gain · 7&#x2013;10 kg pack. Estimated daily expenditure 2,800&#x2013;3,800 kcal. Net deficit above maintenance ≈ 800&#x2013;1,400 kcal/day → projected loss <strong>−0.15 to −0.25 lbs/day</strong> (centre: −0.20). Orange dashed line + shaded band on chart. Scale resumes ~Apr 30 (Moissac).</div>
     <div class="section-title">milestone projections <span style="font-weight:400;color:var(--text3);font-size:10px;text-transform:none;letter-spacing:0"> — ensemble date · (range: fastest–slowest window)</span></div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;" id="milestone-dates"></div>
     <div class="section-title">vo2max trend <span style="font-weight:400;color:var(--text3);font-size:10px;text-transform:none;letter-spacing:0"> — source: Apple Health (Apple Watch)</span></div>
@@ -823,8 +824,13 @@ function initToday() {
     </div>
   `;
 
-  // Recent workouts (Source: Strava via GetFast)
-  const recentW = RAW.strava.slice(0,8);
+  // Recent workouts (Source: Strava via GetFast) — deduplicated by date+name
+  const _seenW = new Set();
+  const recentW = RAW.strava.filter(w => {
+    const k = w.date + '|' + (w.name || w.type);
+    if (_seenW.has(k)) return false;
+    _seenW.add(k); return true;
+  }).slice(0,8);
   document.getElementById("today-workouts").innerHTML = recentW.length ? recentW.map(w=>`
     <div class="workout-row">
       <div class="workout-icon ${typeIconClass(w.type)}">${typeEmoji(w.type)}</div>
@@ -1108,6 +1114,30 @@ function initWeight() {
   });
   // Ensemble projection
   datasets.push({label:'Ensemble projection (Scale)',data:[{x:todayStr,y:current},...ensFut],borderColor:'#1a7a4a',backgroundColor:'transparent',pointRadius:0,tension:0.35,borderWidth:2.5,order:4});
+
+  // ── Camino GR65 projection (Apr 15–30 2026) ──────────────────────────────
+  // 450km over 15 walking days, ~30km/day, 9,500m gain, 7-10kg pack.
+  // Estimated expenditure 2,800–3,800 kcal/day. Net deficit ~800–1,400 kcal/day
+  // above normal TDEE → ~0.15–0.28 lbs/day of true fat/glycogen loss.
+  // Centre estimate: −0.20 lbs/day. Range band: −0.15 to −0.25 lbs/day.
+  const CAMINO_START = '2026-04-15';
+  const CAMINO_END   = '2026-04-30';
+  const CAMINO_RATE  = -0.20;
+  const CAMINO_LO    = -0.15; // conservative (higher weight)
+  const CAMINO_HI    = -0.25; // aggressive (lower weight)
+  const cStartN = dayNum(CAMINO_START);
+  const cAnchor = +(current + ensRpD * (cStartN - todayN)).toFixed(2);
+  const caminoPts=[], caminoBandHi=[], caminoBandLo=[];
+  for (let d=0; d<=15; d++) {
+    const dt = new Date(new Date(CAMINO_START).getTime() + d*86400000).toISOString().slice(0,10);
+    if (dt > CAMINO_END) break;
+    caminoPts.push({x:dt, y:+(cAnchor + CAMINO_RATE*d).toFixed(2)});
+    caminoBandHi.push({x:dt, y:+(cAnchor + CAMINO_LO*d).toFixed(2)});
+    caminoBandLo.push({x:dt, y:+(cAnchor + CAMINO_HI*d).toFixed(2)});
+  }
+  datasets.push({label:'_camino_band_hi',data:caminoBandHi,borderColor:'transparent',backgroundColor:'rgba(180,100,20,0.12)',pointRadius:0,fill:'+1',tension:0.3,borderWidth:0,order:3});
+  datasets.push({label:'_camino_band_lo',data:caminoBandLo,borderColor:'rgba(180,100,20,0.2)',backgroundColor:'transparent',pointRadius:0,fill:false,tension:0.3,borderWidth:0.5,borderDash:[2,3],order:3});
+  datasets.push({label:'Camino GR65 (Apr 15–30, −0.20 lbs/day est.)',data:caminoPts,borderColor:'#b46414',backgroundColor:'transparent',pointRadius:0,tension:0.3,borderWidth:2,borderDash:[5,3],order:3});
   // Milestone lines
   const milestones = [{wt:175,col:'rgba(26,79,168,0.4)'},{wt:170,col:'rgba(90,58,138,0.4)'},{wt:165,col:'rgba(26,106,106,0.4)'},{wt:160,col:'rgba(26,122,74,0.55)'}];
   const firstDate = wPts[0]?.date || cutoff90w;
