@@ -334,6 +334,10 @@
     <div class="section-title">trend window rates</div>
     <div id="rate-summary"></div>
     <div style="background:rgba(180,100,20,0.07);border:1px solid rgba(180,100,20,0.25);border-radius:var(--radius);padding:12px 16px;margin-bottom:16px;font-size:12.5px;color:var(--text2);line-height:1.6;"><span style="font-weight:600;color:#b46414;">🥾 GR65 Via Podiensis projection (Apr 15&#x2013;30)</span> — 450 km · 15 walking days · 9,500m gain · 7&#x2013;10 kg pack. Estimated daily expenditure 2,800&#x2013;3,800 kcal. Net deficit above maintenance ≈ 800&#x2013;1,400 kcal/day → projected loss <strong>−0.15 to −0.25 lbs/day</strong> (centre: −0.20). Orange dashed line + shaded band on chart. Scale resumes ~Apr 30 (Moissac).</div>
+    <div class="section-title">trip forecast — Apr 15 → Jun 1 <span style="font-weight:400;color:var(--text3);font-size:10px;text-transform:none;letter-spacing:0"> — composite projection through Camino + Via Rhôna · no scale data during trips</span></div>
+    <div class="chart-wrap">
+      <div class="chart-inner" style="height:280px"><canvas id="tripForecastChart"></canvas></div>
+    </div>
     <div class="section-title">milestone projections <span style="font-weight:400;color:var(--text3);font-size:10px;text-transform:none;letter-spacing:0"> — ensemble date · (range: fastest–slowest window)</span></div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;" id="milestone-dates"></div>
     <div class="section-title">vo2max trend <span style="font-weight:400;color:var(--text3);font-size:10px;text-transform:none;letter-spacing:0"> — source: Apple Health (Apple Watch)</span></div>
@@ -1166,6 +1170,8 @@ function initWeight() {
     })
   });
 
+  initTripForecast();
+
   // Recent weight + VO2max dual-axis (Sources: Apple Health weight + VO2max)
   const cutoff45_ah = new Date(Date.now()-45*86400000).toISOString().slice(0,10);
   const ahRecent = RAW.ah.filter(r=>(r.wt_kg||r.vo2)&&r.date>=cutoff45_ah);
@@ -1212,6 +1218,186 @@ function initWeight() {
     </div>
     <div style="font-size:12px;color:var(--text3);">Source: Scale / Apple Health · Chart: last 90 days · Ensemble rate: 7d×8% + 30d×22% + 45d×30% + 90d×40% (each R²-scaled) · ETAs ±20%</div>
   `;
+}
+
+
+function initTripForecast() {
+  // ── Zoomed trip forecast: today → Jun 1 2026 ──────────────────────────────
+  // Stitches together: baseline ensemble → Camino (Apr 15-30) → post-Camino
+  // resume → Via Rhôna (May 15-22) → post-VR resume.
+  // No scale readings during either trip — gap shown as dotted bridge.
+  // All rates in lbs/day. Bands show conservative/aggressive range.
+
+  const { ratePerWeek, current } = getWeightTrend();
+  const ensRpD = ratePerWeek / 7;
+  const todayStr = new Date().toISOString().slice(0,10);
+  const todayN   = dayNum(todayStr);
+
+  // Trip definitions
+  const C_START = '2026-04-15'; const C_END = '2026-04-30';
+  const V_START = '2026-05-15'; const V_END = '2026-05-22';
+  const CHART_END = '2026-06-01';
+
+  const C_RATE = -0.20; const C_LO = -0.15; const C_HI = -0.25;
+  const V_RATE = -0.28; const V_LO = -0.22; const V_HI = -0.34;
+
+  // Helper: walk dates day by day from start to end inclusive
+  function walkDates(start, end) {
+    const out = [];
+    let cur = new Date(start);
+    const stop = new Date(end);
+    while (cur <= stop) {
+      out.push(cur.toISOString().slice(0,10));
+      cur = new Date(cur.getTime() + 86400000);
+    }
+    return out;
+  }
+
+  // Helper: project from an anchor at ensRpD through a date range
+  function baselineSeg(fromDate, toDate, anchorDate, anchorWt) {
+    return walkDates(fromDate, toDate).map(dt => ({
+      x: dt,
+      y: +(anchorWt + ensRpD * (dayNum(dt) - dayNum(anchorDate))).toFixed(2)
+    }));
+  }
+
+  // Compute anchors
+  const cStartN  = dayNum(C_START);
+  const cAnchor  = +(current + ensRpD * (cStartN - todayN)).toFixed(2);
+  const cEndWt   = +(cAnchor + C_RATE * 15).toFixed(2);
+  const cEndLoWt = +(cAnchor + C_LO   * 15).toFixed(2);
+  const cEndHiWt = +(cAnchor + C_HI   * 15).toFixed(2);
+
+  const vrStartN  = dayNum(V_START);
+  // between-trip baseline: pick up from cEnd weight, drift at ensRpD until V_START
+  const btAnchor  = cEndWt;
+  const btDays    = vrStartN - dayNum(C_END);
+  const vrAnchor  = +(btAnchor + ensRpD * btDays).toFixed(2);
+  const vrAnchorLo = +(cEndLoWt + ensRpD * btDays).toFixed(2);
+  const vrAnchorHi = +(cEndHiWt + ensRpD * btDays).toFixed(2);
+
+  const vrEndWt   = +(vrAnchor  + V_RATE * 7).toFixed(2);
+  const vrEndLoWt = +(vrAnchorLo + V_LO  * 7).toFixed(2);
+  const vrEndHiWt = +(vrAnchorHi + V_HI  * 7).toFixed(2);
+
+  // ── Segment datasets ──────────────────────────────────────────────────────
+
+  // 1. Pre-Camino baseline (today → C_START)
+  const preC = baselineSeg(todayStr, C_START, todayStr, current);
+
+  // 2. Camino centre line (C_START → C_END)
+  const cDates = walkDates(C_START, C_END);
+  const cLine  = cDates.map((dt,i) => ({x:dt, y:+(cAnchor + C_RATE*i).toFixed(2)}));
+  const cBandHi = cDates.map((dt,i) => ({x:dt, y:+(cAnchor + C_LO*i).toFixed(2)}));
+  const cBandLo = cDates.map((dt,i) => ({x:dt, y:+(cAnchor + C_HI*i).toFixed(2)}));
+
+  // 3. Between-trip baseline (C_END → V_START) — dotted, no scale
+  const btLine   = baselineSeg(C_END, V_START, C_END, cEndWt);
+  const btBandHi = baselineSeg(C_END, V_START, C_END, cEndLoWt);
+  const btBandLo = baselineSeg(C_END, V_START, C_END, cEndHiWt);
+
+  // 4. Via Rhôna centre line (V_START → V_END)
+  const vrDates  = walkDates(V_START, V_END);
+  const vrLine   = vrDates.map((dt,i) => ({x:dt, y:+(vrAnchor  + V_RATE*i).toFixed(2)}));
+  const vrBandHi = vrDates.map((dt,i) => ({x:dt, y:+(vrAnchorLo + V_LO*i).toFixed(2)}));
+  const vrBandLo = vrDates.map((dt,i) => ({x:dt, y:+(vrAnchorHi + V_HI*i).toFixed(2)}));
+
+  // 5. Post-VR baseline (V_END → CHART_END)
+  const postVR   = baselineSeg(V_END, CHART_END, V_END, vrEndWt);
+  const postVRHi = baselineSeg(V_END, CHART_END, V_END, vrEndLoWt);
+  const postVRLo = baselineSeg(V_END, CHART_END, V_END, vrEndHiWt);
+
+  // ── Band helper: merge hi/lo segs across phases ───────────────────────────
+  const fullBandHi = [...preC.map(p=>({x:p.x, y:+(p.y+1.5).toFixed(2)})), ...cBandHi, ...btBandHi, ...vrBandHi, ...postVRHi];
+  const fullBandLo = [...preC.map(p=>({x:p.x, y:+(p.y-1.5).toFixed(2)})), ...cBandLo, ...btBandLo, ...vrBandLo, ...postVRLo];
+
+  // ── Centre composite line (all phases joined) ─────────────────────────────
+  const centreLine = [...preC, ...cLine, ...btLine, ...vrLine, ...postVR];
+
+  // ── Recent actual scale readings (last pre-trip) ──────────────────────────
+  const recentActual = RAW.weight
+    .filter(r => r.date >= new Date(Date.now()-30*86400000).toISOString().slice(0,10))
+    .map(r => ({x:r.date, y:r.wt}));
+
+  // ── Milestone horizontals within chart window ─────────────────────────────
+  const forecastMilestones = [175, 170, 165].filter(w => current > w && vrEndLoWt < w + 5);
+
+  const fcDatasets = [];
+
+  // Band
+  fcDatasets.push({label:'_fc_hi', data:fullBandHi, borderColor:'transparent', backgroundColor:'rgba(90,58,138,0.08)', pointRadius:0, fill:'+1', tension:0.3, borderWidth:0, order:9});
+  fcDatasets.push({label:'_fc_lo', data:fullBandLo, borderColor:'rgba(90,58,138,0.15)', backgroundColor:'transparent', pointRadius:0, fill:false, tension:0.3, borderWidth:0.5, borderDash:[2,3], order:9});
+
+  // Camino band (orange tint)
+  fcDatasets.push({label:'_c_hi', data:cBandHi, borderColor:'transparent', backgroundColor:'rgba(180,100,20,0.13)', pointRadius:0, fill:'+1', tension:0.3, borderWidth:0, order:8});
+  fcDatasets.push({label:'_c_lo', data:cBandLo, borderColor:'rgba(180,100,20,0.25)', backgroundColor:'transparent', pointRadius:0, fill:false, tension:0.3, borderWidth:0.5, borderDash:[2,3], order:8});
+
+  // Via Rhôna band (blue tint)
+  fcDatasets.push({label:'_vr_hi', data:vrBandHi, borderColor:'transparent', backgroundColor:'rgba(30,100,180,0.13)', pointRadius:0, fill:'+1', tension:0.3, borderWidth:0, order:8});
+  fcDatasets.push({label:'_vr_lo', data:vrBandLo, borderColor:'rgba(30,100,180,0.25)', backgroundColor:'transparent', pointRadius:0, fill:false, tension:0.3, borderWidth:0.5, borderDash:[2,3], order:8});
+
+  // Pre-Camino baseline (solid green)
+  fcDatasets.push({label:'Baseline trend', data:preC, borderColor:'#1a7a4a', backgroundColor:'transparent', pointRadius:0, tension:0.3, borderWidth:2, order:4});
+
+  // Camino centre (orange dashed)
+  fcDatasets.push({label:'🥾 Camino GR65 (Apr 15–30)', data:cLine, borderColor:'#b46414', backgroundColor:'transparent', pointRadius:0, tension:0.3, borderWidth:2, borderDash:[5,3], order:3});
+
+  // Between-trip resume (grey dotted)
+  fcDatasets.push({label:'Post-Camino resume (est.)', data:btLine, borderColor:'rgba(90,90,90,0.5)', backgroundColor:'transparent', pointRadius:0, tension:0.3, borderWidth:1.5, borderDash:[3,4], order:5});
+
+  // Via Rhôna centre (blue dashed)
+  fcDatasets.push({label:'🚴 Via Rhôna (May 15–22)', data:vrLine, borderColor:'#1a64b4', backgroundColor:'transparent', pointRadius:0, tension:0.3, borderWidth:2, borderDash:[5,3], order:3});
+
+  // Post-VR resume (grey dotted)
+  fcDatasets.push({label:'Post-VR resume (est.)', data:postVR, borderColor:'rgba(90,90,90,0.5)', backgroundColor:'transparent', pointRadius:0, tension:0.3, borderWidth:1.5, borderDash:[3,4], order:5});
+
+  // Actual readings
+  fcDatasets.push({label:'Scale readings', data:recentActual, borderColor:'rgba(26,26,26,0.25)', backgroundColor:'rgba(26,26,26,0.5)', pointRadius:3, pointBackgroundColor:'rgba(26,26,26,0.5)', showLine:false, order:2});
+
+  // Milestone horizontals
+  const mileCols = {175:'rgba(26,79,168,0.4)',170:'rgba(90,58,138,0.4)',165:'rgba(26,106,106,0.45)'};
+  forecastMilestones.forEach(w => {
+    fcDatasets.push({label:`${w} lbs`, data:[{x:todayStr,y:w},{x:CHART_END,y:w}], borderColor:mileCols[w]||'rgba(100,100,100,0.4)', backgroundColor:'transparent', pointRadius:0, borderDash:[6,4], borderWidth:1.5, order:20});
+  });
+
+  // ── Y-axis range: from just below vrEndHiWt to just above current ─────────
+  const yMin = Math.floor((Math.min(vrEndHiWt, vrEndLoWt) - 5) / 5) * 5;
+  const yMax = Math.ceil((current + 4) / 5) * 5;
+
+  mkChart('tripForecastChart', {
+    type: 'line',
+    data: {datasets: fcDatasets},
+    options: deepMerge(CHART_DEFAULTS, {
+      scales: {
+        x: {
+          type:'time',
+          min: todayStr,
+          max: CHART_END,
+          time: {unit:'week', displayFormats:{week:'MMM d'}},
+          ticks: {color:'#9a9790', font:{size:11}}
+        },
+        y: {
+          min: yMin,
+          max: yMax,
+          ticks: {callback: v => v + ' lbs', color:'#9a9790', font:{size:11}}
+        }
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom',
+          labels: {
+            font:{size:11,family:'Inter,-apple-system,sans-serif'},
+            color:'#5a5750',
+            boxWidth:18,
+            padding:10,
+            filter: item => !item.text.startsWith('_')
+          }
+        },
+        tooltip: {backgroundColor:'#fff',titleColor:'#5a5750',bodyColor:'#1a1916',borderColor:'#dddbd3',borderWidth:1,padding:10}
+      }
+    })
+  });
 }
 
 
