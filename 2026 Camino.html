@@ -167,6 +167,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--ink);fo
 
 .main{max-width:1100px;margin:0 auto;padding:36px 24px 60px}
 .section-head{display:flex;align-items:baseline;gap:12px;margin-bottom:18px;margin-top:36px}
+details.section { margin-bottom: 0; }
+details.section summary { 
+  display: flex; align-items: center; gap: 12px; 
+  list-style: none; cursor: pointer; user-select: none;
+  margin-bottom: 18px; margin-top: 36px;
+}
+details.section summary::-webkit-details-marker { display: none; }
+details.section summary h2 {
+  font-family: 'Playfair Display', serif; font-size: 18px;
+  font-weight: 600; color: var(--ink); margin: 0; white-space: nowrap;
+}
+details.section summary .rule { flex: 1; height: 1px; background: var(--border-med); }
+details.section summary .chevron { 
+  font-size: 11px; color: var(--ink-soft); transition: transform .2s; flex-shrink: 0;
+}
+details.section[open] summary .chevron { transform: rotate(180deg); }
+
 .section-head h2{font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:var(--ink)}
 .section-head .rule{flex:1;height:1px;background:var(--border-med)}
 
@@ -180,7 +197,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--ink);fo
 /* CHARTS */
 .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px}
 @media(max-width:720px){.charts-grid{grid-template-columns:1fr}}
-.chart-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;box-shadow:var(--shadow)}
+.chart-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;box-shadow:var(--shadow);overflow:hidden;min-width:0}
 .chart-card.wide{grid-column:1/-1}
 .chart-title{font-size:11px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:16px}
 .legend{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px;font-size:11.5px;color:var(--ink-soft);align-items:center}
@@ -238,7 +255,12 @@ tbody tr.booked-row:hover{background:rgba(46,107,74,0.07)}
 .footnote a{color:var(--pilgrim);text-decoration:none}
 .footer{background:var(--ink);color:rgba(245,240,232,0.4);text-align:center;padding:24px;font-size:11.5px;margin-top:48px}
 .footer strong{color:rgba(245,240,232,0.7)}
-@media(max-width:700px){.header{padding:32px 20px 28px}.main{padding:24px 16px 48px}td,th{padding:8px 8px}.hide-mobile{display:none}}
+@media(max-width:700px){.header{padding:32px 20px 28px}.main{padding:24px 16px 48px}td,th{padding:8px 8px}.hide-mobile{display:none}
+.tab-strip{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
+.tab-strip button{flex-shrink:0}
+canvas{max-width:100%}
+.main{overflow-x:hidden}
+}
 </style>
 </head>
 <body>
@@ -247,7 +269,7 @@ tbody tr.booked-row:hover{background:rgba(46,107,74,0.07)}
   <div class="header-inner">
     <p class="eyebrow">Via Podiensis · GR65 · Rocamadour Variant</p>
     <h1>Le Puy to Moissac<br><em>April 15 – April 30, 2025</em></h1>
-    <p class="header-sub">Connor · Lauren · Father &nbsp;·&nbsp; 16 walking days &nbsp;·&nbsp; Lyon → Bordeaux → Milan</p>
+    <p class="header-sub">Connor &nbsp;·&nbsp; 16 walking days &nbsp;·&nbsp; Lyon → Bordeaux → Milan</p>
     <div class="stat-row">
       <div class="stat-pill"><span class="val">447.2</span><span class="lbl">GPS km</span></div>
       <div class="stat-pill"><span class="val">~9,500</span><span class="lbl">metres ascent</span></div>
@@ -260,12 +282,10 @@ tbody tr.booked-row:hover{background:rgba(46,107,74,0.07)}
 <main class="main">
 
 
-  <div class="pace-note">
-    <strong>Pace model (updated):</strong> Pure moving time, calibrated from your actual Strava data. Formula: <strong>speed = 5.36 − 0.0185 × (gain/km) − 0.004 × (loss/km)</strong>, floored at 3.0 km/h. Derived via regression from the <strong>Camino Francés 2022</strong> (22 days, mean 5.06 km/h at 16m/km avg gain density), <strong>TMB 2023</strong> (5 days, mean 4.30 km/h at 53m/km avg gain density), and grade/speed streams from Howe Sound Crest Trail, A lot of cloud, and Hanes Valley. BC trail streams confirmed flat-terrain median ~4.2 km/h on rough terrain; GR65 maintained paths run ~20% faster for the same grade, consistent with Camino actuals. The new model runs ~55 min faster per day on average than the old 5.2 km/h + 600m/h formula. No rest, food stops, or churches included.
-  </div>
 
   <!-- MAP -->
-  <div class="section-head"><h2>Route map</h2><div class="rule"></div></div>
+  <details class="section" open>
+  <summary><h2>Route map</h2><div class="rule"></div><span class="chevron">▼</span></summary>
   <div id="routeMap"></div>
   <div class="map-legend">
     <span><span class="ld" style="background:#3a2a1a"></span>Main GR65</span>
@@ -307,7 +327,10 @@ tbody tr.booked-row:hover{background:rgba(46,107,74,0.07)}
   </div>
 
   <!-- ELEVATION -->
-  <div class="section-head"><h2>Elevation profiles</h2><div class="rule"></div></div>
+  </details>
+
+  <details class="section" open>
+  <summary><h2>Elevation profiles</h2><div class="rule"></div><span class="chevron">▼</span></summary>
   <div class="chart-card" style="margin-bottom:28px">
     <div class="ele-tabs" id="eleTabs"></div>
     <div style="position:relative;width:100%;height:170px"><canvas id="eleChart"></canvas></div>
@@ -316,8 +339,11 @@ tbody tr.booked-row:hover{background:rgba(46,107,74,0.07)}
   </div>
 
 
+  </details>
+
   <!-- WEATHER & SERVICES -->
-  <div class="section-head"><h2>Weather &amp; field notes</h2><div class="rule"></div></div>
+  <details class="section" open>
+  <summary><h2>Weather &amp; field notes</h2><div class="rule"></div><span class="chevron">▼</span></summary>
   <div class="charts-grid" style="margin-bottom:28px">
 
     <!-- LIVE FORECAST WIDGET -->
@@ -326,12 +352,12 @@ tbody tr.booked-row:hover{background:rgba(46,107,74,0.07)}
         <p class="chart-title" style="margin:0">Live forecast · key waypoints</p>
         <span id="forecastTimestamp" style="font-size:10.5px;color:var(--ink-faint)">Loading…</span>
       </div>
-      <div id="forecastGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px">
+      <div id="forecastGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(190px,100%),1fr));gap:12px">
         <div style="color:var(--ink-faint);font-size:12px;padding:12px 0">Fetching forecast…</div>
       </div>
       <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
         <p class="chart-title" style="margin-bottom:10px">Average April conditions by terrain zone</p>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;font-size:11.5px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:10px;font-size:11.5px">
           <div style="border:1px solid var(--border);border-radius:8px;padding:12px">
             <div style="font-weight:600;margin-bottom:6px">🏔 Margeride <span style="font-size:10px;font-weight:400;color:var(--ink-faint)">D1–D4 · 900–1300m</span></div>
             <div style="color:var(--ink-mid);line-height:1.8">High 10–13°C · Low 1–3°C<br>Rain ~27% · Snow possible at night<br><span style="color:#8b7060;font-size:10.5px">Pack layers. Cold mornings.</span></div>
@@ -387,8 +413,11 @@ tbody tr.booked-row:hover{background:rgba(46,107,74,0.07)}
 
   </div>
 
+  </details>
+
   <!-- TABLE -->
-  <div class="section-head"><h2>Stage breakdown</h2><div class="rule"></div></div>
+  <details class="section" open>
+  <summary><h2>Stage breakdown</h2><div class="rule"></div><span class="chevron">▼</span></summary>
   <div class="table-wrap">
     <table>
       <thead>
@@ -397,12 +426,14 @@ tbody tr.booked-row:hover{background:rgba(46,107,74,0.07)}
           <th class="r">km</th>
           <th class="r hide-mobile">↑ / ↓</th>
           <th class="r">Moving time</th>
-          <th class="hide-mobile">Gîtes at destination</th>
+          <th class="r hide-mobile">Gîtes</th>
         </tr>
       </thead>
       <tbody id="tableBody"></tbody>
     </table>
   </div>
+
+  </details>
 
   <div class="footnote">
     Stage distances: Days 1–4 and 8–16 from GPX (main GR65) and KML files (Rocamadour variant FR41/FR42). Days 5–7 from <a href="https://ilovewalkinginfrance.com" target="_blank">ilovewalkinginfrance.com</a> guidebook (Feb 2026) — the GPX routes differently to the waymarked GR65 in the Aubrac section. Moving times from pace model calibrated on your Strava data: Camino Francés 2022, TMB 2023, and BC hike streams. No rest or stops included. Gîte data from <a href="https://wisepilgrim.com" target="_blank">Wise Pilgrim</a> &amp; <a href="https://ilovewalkinginfrance.com" target="_blank">ilovewalkinginfrance.com</a>, early 2026. Map: <a href="https://www.openstreetmap.org" target="_blank">OpenStreetMap</a> contributors.
@@ -432,22 +463,22 @@ const BOOKING_LINKS = {
 };
 
 const STAGES = [
-  {day:1, date:"Apr 15", from:"Le Puy-en-Velay",      to:"Montbonnet",              km:16.7, gain:326,  loss:59,   variant:false, gites:3,  gite_note:"Gîte La 1ère étape · Anne &amp; Didier · Tel: 06 21 47 18 96 · maps.google.com/?q=Montbonnet+Gite+La+Premiere+Etape · Booked: email (Feb 17 2026) · Bed: demi-pension, shared room of 4 · Price: €49/person (bed + dinner + breakfast) · Deposit: none · Call if arriving after 17h.", warn:false, warn_msg:"", booked:true,  lat:45.0017, lon:3.8149},
-  {day:2, date:"Apr 16", from:"Montbonnet",            to:"Saugues",                 km:26.1, gain:970,  loss:913,  variant:false, gites:5,  gite_note:"Gîte Communal Saugues · Tel: 06 65 15 04 32 · maps.google.com/?q=8+Avenue+du+Gevaudan+Saugues · Booked: online campingdelaseuge.fr (Apr 8 2026) · Ref: O20260408MCCRA18414377 · Bed: dorm, bed only (self-catering kitchen) · Price: €16.78 (€15.90 + €0.88 taxe de séjour) · Deposit: paid in full by card (payment P20260408MCCRA136424831).", warn:false, warn_msg:"", booked:true,  lat:44.9622, lon:3.5400},
-  {day:3, date:"Apr 17", from:"Saugues",               to:"Domaine du Sauvage",      km:22.5, gain:608,  loss:272,  variant:false,  gites:1,  gite_note:"Auberge du Sauvage · Tel: 04 71 74 40 30 · maps.google.com/?q=Domaine+du+Sauvage+Saugues+Gevaudan · Booked: online sauvage-en-gevaudan.com (Apr 2026) · Ref: OS-8999873 · Bed: demi-pension, shared room of 5 · Price: €54.88 total · Deposit: €24.88 paid online, €30.00 on arrival · Check-in 16h.", warn:false, warn_msg:"", booked:true,  lat:44.8303, lon:3.4569},
-  {day:4, date:"Apr 18", from:"Domaine du Sauvage",    to:"Aumont-Aubrac",           km:25.1, gain:443,  loss:694,  variant:false,  gites:6,  gite_note:"La Ferme du Barry · Host: Charles · Tel: 06 76 34 17 30 · maps.google.com/?q=Ferme+du+Barry+Aumont-Aubrac · Booked: email fermedubarry@yahoo.fr (Apr 9 2026) · Bed: demi-pension, 5-person dorm · Price: €45/person · Deposit: none.", warn:false, warn_msg:"", booked:true,  lat:44.7230, lon:3.2858},
-  {day:5, date:"Apr 19", from:"Aumont-Aubrac",         to:"Nasbinals",               km:26.1, gain:759,  loss:496,  variant:false,  gites:7,  gite_note:"Gîte NADA · Tel: 06 32 18 43 53 · maps.google.com/?q=NADA+Nasbinals · Booked: email nada.nasbinals@gmail.com (Apr 8 2026) · Bed: shared room of 3 beds, no dinner · Price: €19/person + €3 heating surcharge · Deposit: none · Breakfast donativo. Dinner in village.", warn:false, warn_msg:"", booked:true,  lat:44.6580, lon:2.9929},
-  {day:6, date:"Apr 20", from:"Nasbinals",             to:"Saint-Côme-d'Olt",        km:33.4, gain:582,  loss:1535, variant:false,  gites:4,  gite_note:"D6 Saint-Côme-d'Olt — NO accommodation confirmed. Del Roumiou full. La Casa de Annie (06 37 20 96 76) contacted via WhatsApp Apr 9 — no response. Alternatives: Couvent de Malet (05 65 51 03 20, 60 beds), Gîte Les Templiers, Gîte du Couvent.", warn:false, warn_msg:"", booked:false, lat:44.5036, lon:2.8289},
-  {day:7, date:"Apr 21", from:"Saint-Côme-d'Olt",      to:"Estaing",                 km:20.5, gain:697,  loss:717,  variant:false,  gites:6,  gite_note:"Gîte Communal Estaing · Tel: 06 44 95 52 14 · maps.google.com/?q=10+place+du+Foirail+Estaing+Aveyron · Booked: online gitecommunalestaing.fr (Apr 8 2026) · Ref: O001958 · Bed: dorm, self-catering (no meals) · Price: €17.00 (€16.34 + €0.66 taxe de séjour) · Deposit: €4.90 via Wise (#2068445430) · Balance: €12.10 on arrival · Check-in 15h–18h, call if late.", warn:false, warn_msg:"", booked:true, lat:44.5698, lon:2.6660},
-  {day:8, date:"Apr 22", from:"Estaing",               to:"Conques",                 km:35.7, gain:1165, loss:1193, variant:false, gites:5,  gite_note:"Abbaye Sainte-Foy · Tel: 05 65 69 85 12 · maps.google.com/?q=Abbaye+Sainte-Foy+Conques · Booked: online abbaye-conques.org (Apr 8 2026) · Ref: 461595, payment 2052422 · Bed: dortoir 212, bed only (eating in town) · Price: €14.77 · Deposit: paid in full by card · Check-in 14h–17h45.",  warn:false, warn_msg:"", booked:true,  lat:44.6003, lon:2.3969},
-  {day:9, date:"Apr 23", from:"Conques",               to:"Montredon",               km:37.7, gain:1265, loss:1300, variant:false, gites:4,  gite_note:"Gîte Bien et Toit · Host: Frank · Tel: (WhatsApp) · maps.google.com/?q=Gite+Bien+et+Toit+Montredon+GR65 · Booked: WhatsApp (Apr 8 2026) · Bed: dortoir, demi-pension · Price: €42/person (bed + dinner + breakfast) · Deposit: none · Pool on site. Check-in from 16h.",                                                warn:false, warn_msg:"", booked:true,  lat:44.6095, lon:2.1360},
-  {day:10,date:"Apr 24", from:"Le Terly",              to:"Lacapelle-Marival",       km:22.8, gain:610,  loss:422,  variant:true, gites:3,  gite_note:"Cèdre Bleu FULL (Marie replied Apr 9). No indoor accommodation confirmed. Options: Le Perchoir Rudelle (06 28 07 27 86), La Terrasse hotel (€89), or Camping Bois de Sophie (06 80 59 79 86).",                          warn:false, warn_msg:"", booked:false, lat:44.7289, lon:1.9238},
-  {day:11,date:"Apr 25", from:"Lacapelle-Marival",     to:"Rocamadour",              km:33.9, gain:320,  loss:521,  variant:true, gites:6,  gite_note:"Le Terminus des Pèlerins · Tel: 05 65 33 62 04 · maps.google.com/?q=Le+Terminus+des+Pelerins+Rocamadour · Booked: Booking.com (Apr 9 2026) · Ref: 5325248270 PIN 5423 · Bed: Standard Double Room with Valley View · Price: €95 (~CAD 154 incl. taxes) · Deposit: card guaranteed, free cancel until Apr 22 · Check-in 15h–20h, check-out 10h30.", warn:false, warn_msg:"", booked:true,  lat:44.7991, lon:1.6196},
-  {day:12,date:"Apr 26", from:"Rocamadour",            to:"Labastide-Murat",         km:27.7, gain:740,  loss:551,  variant:true, gites:3,  gite_note:"Le Refuge des Gazelles · Host: Marie · Tel: 06 85 64 62 07 · maps.google.com/?q=6+Route+de+Montfaucon+Labastide-Murat · Booked: email lerefugedesgazelles@gmail.com (Apr 9 2026) · Bed: demi-pension, 3-person room · Price: €43/person · Deposit: €10 via Wise (Apr 9 2026, received confirmed) · Sleeping bag liner — no linen/towel needed. Check-in 16h00, bags in veranda lockers.", warn:false, warn_msg:"", booked:true,  lat:44.6478, lon:1.5663},
-  {day:13,date:"Apr 27", from:"Labastide-Murat",       to:"Vers",                    km:24.0, gain:263,  loss:571,  variant:true, gites:2,  gite_note:"Gîte le Monde Allant Vers · Host: Tony Viot · Tel: (email only) · maps.google.com/?q=Le+Monde+Allant+Vers+Vers+Lot · Booked: email lemondeallantvers46@gmail.com (Apr 8 2026) · Bed: demi-pension, 8-bed mixed dorm · Price: €42/person all-in (bed + dinner + breakfast + tourist tax) + €2 linen + €2 towel · Deposit: none · CASH ONLY — no ATM in Vers, bring cash from Labastide-Murat. Check-in 15h, dinner 19h.", warn:false, warn_msg:"", booked:true,  lat:44.5042, lon:1.5575},
-  {day:14,date:"Apr 28", from:"Vers",                  to:"Lascabannes (via Cahors)", km:33.4, gain:766, loss:614,  variant:false,  gites:2,  gite_note:"La Grange des 2 Vallées — booking request submitted Apr 9 2026 (email to contact@lagrangedes2vallees.fr). Hosts: Emeline &amp; Cyril. Demi-pension, chambre d'hôtes, pool. Awaiting confirmation.", warn:true,  warn_msg:"Booking request sent to contact@lagrangedes2vallees.fr — awaiting confirmation.", booked:false, lat:44.3629, lon:1.3733},
-  {day:15,date:"Apr 29", from:"Lascabannes",           to:"Lauzerte",                km:32.6, gain:783,  loss:857,  variant:false, gites:4,  gite_note:"Gîte Les Figuiers · Hosts: Orla &amp; Jean-Pierre · Tel: 06 85 31 71 31 · maps.google.com/?q=Gite+Les+Figuiers+Lauzerte · Booked: email accueil@lesfiguiers-lauzerte.com (Apr 9 2026) · Bed: demi-pension, dorm bed · Price: €42/person · Deposit: none · Notify promptly of any changes.", warn:false, warn_msg:"", booked:true,  lat:44.2591, lon:1.1367},
-  {day:16,date:"Apr 30", from:"Lauzerte",              to:"Moissac",                 km:28.3, gain:595,  loss:735,  variant:false, gites:6,  gite_note:"~6 pilgrim gîtes + abbey hospice",                                                                                                    warn:false, warn_msg:"", booked:false, lat:44.1003, lon:1.0842},
+  {day:1, date:"Apr 15", from:"Le Puy-en-Velay",      to:"Montbonnet",              km:16.7, gain:326,  loss:59,   variant:false, gites:3,  gite_note:"Gîte La 1ère étape · Anne &amp; Didier · Tel: 06 21 47 18 96 · maps.google.com/?q=Montbonnet+Gite+La+Premiere+Etape · Booked: email (Feb 17 2026) · Bed: demi-pension, shared room of 4 · Price: €49/person (bed + dinner + breakfast) · Deposit: none · Call if arriving after 17h.", warn:false, warn_msg:"", booked:true,  lat:44.9895243, lon:3.7417827},
+  {day:2, date:"Apr 16", from:"Montbonnet",            to:"Saugues",                 km:26.1, gain:970,  loss:913,  variant:false, gites:5,  gite_note:"Gîte Communal Saugues · Tel: 06 65 15 04 32 · maps.google.com/?q=8+Avenue+du+Gevaudan+Saugues · Booked: online campingdelaseuge.fr (Apr 8 2026) · Ref: O20260408MCCRA18414377 · Bed: dorm, bed only (self-catering kitchen) · Price: €16.78 (€15.90 + €0.88 taxe de séjour) · Deposit: paid in full by card (payment P20260408MCCRA136424831).", warn:false, warn_msg:"", booked:true,  lat:44.9590892, lon:3.545267400},
+  {day:3, date:"Apr 17", from:"Saugues",               to:"Domaine du Sauvage",      km:22.5, gain:608,  loss:272,  variant:false,  gites:1,  gite_note:"Auberge du Sauvage · Tel: 04 71 74 40 30 · maps.google.com/?q=Domaine+du+Sauvage+Saugues+Gevaudan · Booked: online sauvage-en-gevaudan.com (Apr 2026) · Ref: OS-8999873 · Bed: demi-pension, shared room of 5 · Price: €54.88 total · Deposit: €24.88 paid online, €30.00 on arrival · Check-in 16h.", warn:false, warn_msg:"", booked:true,  lat:44.824121, lon:3.487268},
+  {day:4, date:"Apr 18", from:"Domaine du Sauvage",    to:"Aumont-Aubrac",           km:25.1, gain:443,  loss:694,  variant:false,  gites:6,  gite_note:"La Ferme du Barry · Host: Charles · Tel: 06 76 34 17 30 · maps.google.com/?q=Ferme+du+Barry+Aumont-Aubrac · Booked: email fermedubarry@yahoo.fr (Apr 9 2026) · Bed: demi-pension, 5-person dorm · Price: €45/person · Deposit: none.", warn:false, warn_msg:"", booked:true,  lat:44.7223174, lon:3.2872988},
+  {day:5, date:"Apr 19", from:"Aumont-Aubrac",         to:"Nasbinals",               km:26.1, gain:759,  loss:496,  variant:false,  gites:7,  gite_note:"Gîte NADA · Tel: 06 32 18 43 53 · maps.google.com/?q=NADA+Nasbinals · Booked: email nada.nasbinals@gmail.com (Apr 8 2026) · Bed: shared room of 3 beds, no dinner · Price: €19/person + €3 heating surcharge · Deposit: none · Breakfast donativo. Dinner in village.", warn:false, warn_msg:"", booked:true,  lat:44.6617214, lon:3.0449212},
+  {day:6, date:"Apr 20", from:"Nasbinals",             to:"Saint-Côme-d'Olt",        km:33.4, gain:582,  loss:1535, variant:false,  gites:4,  gite_note:"Couvent de Malet · Tel: 05 65 51 03 20 · contact@couventdemalet.fr · maps.google.com/?q=250+Route+de+l'estive+Malet+Saint-Come-d'Olt · Booked: online couventdemalet.fr (Apr 11 2026) · Ref: 462210 · Bed: shared room of 2, bed in 90, corridor bathroom · Price: €26.50 (€16.17 bed + €9.50 breakfast + €0.83 tourist tax) · Deposit: €8.00 required in advance · Check-in 15h00.", warn:true, warn_msg:"Ref 462210 — €8 deposit required to confirm. Send via Wise.", booked:false, lat:44.519417, lon:2.819433},
+  {day:7, date:"Apr 21", from:"Saint-Côme-d'Olt",      to:"Estaing",                 km:20.5, gain:697,  loss:717,  variant:false,  gites:6,  gite_note:"Gîte Communal Estaing · Tel: 06 44 95 52 14 · maps.google.com/?q=10+place+du+Foirail+Estaing+Aveyron · Booked: online gitecommunalestaing.fr (Apr 8 2026) · Ref: O001958 · Bed: dorm, self-catering (no meals) · Price: €17.00 (€16.34 + €0.66 taxe de séjour) · Deposit: €4.90 via Wise (#2068445430) · Balance: €12.10 on arrival · Check-in 15h–18h, call if late.", warn:false, warn_msg:"", booked:true, lat:44.5573119, lon:2.67082320},
+  {day:8, date:"Apr 22", from:"Estaing",               to:"Conques",                 km:35.7, gain:1165, loss:1193, variant:false, gites:5,  gite_note:"Abbaye Sainte-Foy · Tel: 05 65 69 85 12 · maps.google.com/?q=Abbaye+Sainte-Foy+Conques · Booked: online abbaye-conques.org (Apr 8 2026) · Ref: 461595, payment 2052422 · Bed: dortoir 212, bed only (eating in town) · Price: €14.77 · Deposit: paid in full by card · Check-in 14h–17h45.",  warn:false, warn_msg:"", booked:true,  lat:44.5992568, lon:2.3976934},
+  {day:9, date:"Apr 23", from:"Conques",               to:"Montredon",               km:37.7, gain:1265, loss:1300, variant:false, gites:4,  gite_note:"Gîte Bien et Toit · Host: Frank · Tel: (WhatsApp) · maps.google.com/?q=Gite+Bien+et+Toit+Montredon+GR65 · Booked: WhatsApp (Apr 8 2026) · Bed: dortoir, demi-pension · Price: €42/person (bed + dinner + breakfast) · Deposit: none · Pool on site. Check-in from 16h.",                                                warn:false, warn_msg:"", booked:true,  lat:44.6180972, lon:2.1901580},
+  {day:10,date:"Apr 24", from:"Le Terly",              to:"Lacapelle-Marival",       km:22.8, gain:610,  loss:422,  variant:true, gites:3,  gite_note:"Camping Le Bois de Sophie · Tel: 06 80 59 79 86 · maps.google.com/?q=563+Route+d'Aynac+Lacapelle-Marival · Booked: online camping-lot-leboisdesophie.com (Apr 11 2026) · Ref: 18116033 · Bed: Accueil Pèlerin MH Partagé (shared pilgrim mobile home, crédentiale required) · Price: €21.05 paid online · Deposit: paid in full · Awaiting confirmation.", warn:true, warn_msg:"Booking 18116033 submitted and paid — awaiting confirmation from camping.", booked:false, lat:44.733171, lon:1.9177},
+  {day:11,date:"Apr 25", from:"Lacapelle-Marival",     to:"Rocamadour",              km:33.9, gain:320,  loss:521,  variant:true, gites:6,  gite_note:"Le Terminus des Pèlerins · Tel: 05 65 33 62 04 · maps.google.com/?q=Le+Terminus+des+Pelerins+Rocamadour · Booked: Booking.com (Apr 9 2026) · Ref: 5325248270 PIN 5423 · Bed: Standard Double Room with Valley View · Price: €95 (~CAD 154 incl. taxes) · Deposit: card guaranteed, free cancel until Apr 22 · Check-in 15h–20h, check-out 10h30.", warn:false, warn_msg:"", booked:true,  lat:44.798983, lon:1.617921},
+  {day:12,date:"Apr 26", from:"Rocamadour",            to:"Labastide-Murat",         km:27.7, gain:740,  loss:551,  variant:true, gites:3,  gite_note:"Le Refuge des Gazelles · Host: Marie · Tel: 06 85 64 62 07 · maps.google.com/?q=6+Route+de+Montfaucon+Labastide-Murat · Booked: email lerefugedesgazelles@gmail.com (Apr 9 2026) · Bed: demi-pension, 3-person room · Price: €43/person · Deposit: €10 via Wise (Apr 9 2026, received confirmed) · Sleeping bag liner — no linen/towel needed. Check-in 16h00, bags in veranda lockers.", warn:false, warn_msg:"", booked:true,  lat:44.649819, lon:1.5668351},
+  {day:13,date:"Apr 27", from:"Labastide-Murat",       to:"Vers",                    km:24.0, gain:263,  loss:571,  variant:true, gites:2,  gite_note:"Gîte le Monde Allant Vers · Host: Tony Viot · Tel: (email only) · maps.google.com/?q=Le+Monde+Allant+Vers+Vers+Lot · Booked: email lemondeallantvers46@gmail.com (Apr 8 2026) · Bed: demi-pension, 8-bed mixed dorm · Price: €42/person all-in (bed + dinner + breakfast + tourist tax) + €2 linen + €2 towel · Deposit: none · CASH ONLY — no ATM in Vers, bring cash from Labastide-Murat. Check-in 15h, dinner 19h.", warn:false, warn_msg:"", booked:true,  lat:44.4853151, lon:1.5532575},
+  {day:14,date:"Apr 28", from:"Vers",                  to:"Lascabannes (via Cahors)", km:33.4, gain:766, loss:614,  variant:false,  gites:2,  gite_note:"La Grange des 2 Vallées — WhatsApp sent Apr 11 2026 (+33 6 50 19 83 55). Email sent Apr 9 unanswered. Hosts: Emeline &amp; Cyril. Demi-pension requested. Awaiting reply.", warn:true,  warn_msg:"WhatsApp sent to Emeline &amp; Cyril (06 50 19 83 55) — awaiting reply. Email Apr 9 unanswered.", booked:false, lat:44.338174, lon:1.3059505},
+  {day:15,date:"Apr 29", from:"Lascabannes",           to:"Lauzerte",                km:32.6, gain:783,  loss:857,  variant:false, gites:4,  gite_note:"Gîte Les Figuiers · Hosts: Orla &amp; Jean-Pierre · Tel: 06 85 31 71 31 · maps.google.com/?q=Gite+Les+Figuiers+Lauzerte · Booked: email accueil@lesfiguiers-lauzerte.com (Apr 9 2026) · Bed: demi-pension, dorm bed · Price: €42/person · Deposit: none · Notify promptly of any changes.", warn:false, warn_msg:"", booked:true,  lat:44.258771, lon:1.1401822},
+  {day:16,date:"Apr 30", from:"Lauzerte",              to:"Moissac",                 km:28.3, gain:595,  loss:735,  variant:false, gites:6,  gite_note:"L'Ancien Carmel — booking request submitted online Apr 11 2026 (lanciencarmelmoissac.com). Bed only, shared room (pilgrim rate €18.91 + tourist tax). Tel: 05 63 04 62 21 · contact@lanciencarmelmoissac.com · maps.google.com/?q=5+Sente+du+Calvaire+Moissac",                                                                                                    warn:true,  warn_msg:"Booking request submitted — awaiting confirmation from L'Ancien Carmel.", booked:false, lat:44.1003, lon:1.0842},
 ];
 
 // Start point
@@ -524,7 +555,7 @@ STAGES.forEach(s => {
   const t = mt(s.km, s.gain, s.loss);
   const bookedLine = s.booked ? `<br><span style="color:#2e6b4a;font-size:11px;font-weight:500">✓ Confirmed</span>` : '';
   const warnLine   = s.warn   ? `<br><span style="color:#b8860b;font-size:11px">⏳ ${s.warn_msg}</span>` : '';
-  const linksHtml  = BOOKING_LINKS[s.day] ? `<hr style="border:none;border-top:1px solid #ddd;margin:6px 0">${BOOKING_LINKS[s.day]}` : '';
+  const linksHtml  = (BOOKING_LINKS[s.day] && !s.booked) ? `<hr style="border:none;border-top:1px solid #ddd;margin:6px 0">${BOOKING_LINKS[s.day]}` : '';
   const popup = `<strong>D${s.day}: ${s.to}</strong><br>${s.date}<br>${s.km.toFixed(1)} km · ${fmtT(t)}<br>↑${s.gain}m / ↓${s.loss}m<br><span style="font-size:11px;color:#666">${s.booked ? fmtNote(s.gite_note) : s.gite_note}</span>${bookedLine}${warnLine}${linksHtml}`;
   L.marker([s.lat, s.lon], {icon: makeIcon(color, size)})
     .addTo(map)
@@ -542,7 +573,7 @@ STAGES.forEach(s => {
   const bookedB = s.booked ?'<span class="badge b-booked">✓ booked</span>':'';
   const warnExtra   = (s.warn && !s.booked) ? `<div class="pending-banner">⏳ ${s.warn_msg}</div>` : '';
   const bookedExtra = s.booked ? `<div class="booked-banner">✓ ${fmtNote(s.gite_note)}</div>` : '';
-  const linksExtra  = BOOKING_LINKS[s.day] ? `<div class="booking-links-block">${BOOKING_LINKS[s.day]}</div>` : '';
+  const linksExtra  = (BOOKING_LINKS[s.day] && !s.booked) ? `<div class="booking-links-block">${BOOKING_LINKS[s.day]}</div>` : '';
   const tr = document.createElement('tr');
   if(cls) tr.className=cls;
   tr.innerHTML=`
@@ -552,12 +583,19 @@ STAGES.forEach(s => {
     <td class="r num">${s.km.toFixed(1)}</td>
     <td class="r ele-cell hide-mobile">+${s.gain}m / −${s.loss}m</td>
     <td class="r time-cell">${fmtT(t)}</td>
-    <td style="font-size:11.5px" class="hide-mobile">${s.gites} <span style="color:#8b7060">(${s.gite_note})</span></td>
+    <td style="font-size:11.5px;text-align:center" class="hide-mobile">${s.gites}</td>
   `;
   tbody.appendChild(tr);
 });
-[{d:"May 1",n:"Train → Bordeaux"},{d:"May 2",n:"Fly → Milan"}].forEach(r=>{
-  const tr=document.createElement('tr');tr.style.background='#f9f6f2';
+// Pre-walk travel rows (top)
+[{d:"Apr 15",n:"🚆 Lyon Part-Dieu → St-Étienne Châteaucreux · 10:02–10:48 · 46min · Ref: X4FBG6 · e-ticket TGV inoui"},{d:"Apr 15",n:"🚆 St-Étienne Châteaucreux → Le Puy-en-Velay · 11:01–12:28 · 1h27 · Ref: 599603946133 · Print at home (TER)"}].forEach(r=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td style="color:#b0a090;font-style:italic">—</td><td class="date-cell">${r.d}</td><td colspan="5" style="color:#a89880;font-style:italic">${r.n} <span class="badge b-travel">travel</span></td>`;
+  tbody.insertBefore(tr,tbody.firstChild);
+});
+// Post-walk travel rows (bottom)
+[{d:"May 1",n:"🚆 Moissac → Agen · 08:47–09:14 · 27min · Ref: 302844001785 · Print at home (liO) | 🚆 Agen → Bordeaux St-Jean · 09:28–10:41 · 1h13 · Ref: 5V3J64 · e-ticket TGV inoui · Car 15 Seat 547 Window"},{d:"May 1",n:"🏨 ibis budget Bordeaux Centre Gare Saint-Jean · 60 Rue Eugène Leroy · Ref: 73398763452440 · Check-in May 1, check-out May 2 · CA$129.20"},{d:"May 2",n:"✈ EJU3962 Bordeaux (BOD) 13:15 → Milan Malpensa (MXP) 14:45 · Ref: KC53HVQ · Bag drop closes 12:35"}].forEach(r=>{
+  const tr=document.createElement('tr');
   tr.innerHTML=`<td style="color:#b0a090;font-style:italic">—</td><td class="date-cell">${r.d}</td><td colspan="5" style="color:#a89880;font-style:italic">${r.n} <span class="badge b-travel">travel</span></td>`;
   tbody.appendChild(tr);
 });
