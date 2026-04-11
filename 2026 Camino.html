@@ -1313,6 +1313,8 @@ async function exportCard(day) {
       const bboxCLat = (bboxN + bboxS) / 2;
 
       // Derive zoom: at zoom z, 512px covers 360/2^z degrees lon — fit padded span to tile
+      const tileW = Math.min(640, Math.round(mapW / 2));
+      const tileH = Math.min(640, Math.round(mapH / 2));
       const lonSpan = bboxE - bboxW;
       const zoom = Math.min(15, Math.max(9, Math.log2(360 / lonSpan * (tileW / 512))));
 
@@ -1321,8 +1323,6 @@ async function exportCard(day) {
         'pk.eyJ1IjoiY29ubm9ybS0xOSIsImEiOiJjbW51eDJs',
         'ZXMxNG9sMnhxMjBtcm5vazhjIn0.V70srkX73C59e7Gqh88AfA'
       ].join('');
-      const tileW = Math.min(640, Math.round(mapW / 2));
-      const tileH = Math.min(640, Math.round(mapH / 2));
       // Centre+zoom format — confirmed working via console test
       const mapUrl = `https://api.mapbox.com/styles/v1/mapbox/outdoors-v12/static/${bboxCLon.toFixed(5)},${bboxCLat.toFixed(5)},${zoom.toFixed(2)},0/${tileW}x${tileH}@2x?access_token=${MAPBOX_TOKEN}`;
 
