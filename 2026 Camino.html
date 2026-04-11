@@ -6,7 +6,140 @@
 <title>GR65 · Le Puy to Moissac · April 2025</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js">
+// ── LIVE FORECAST ─────────────────────────────────────────────────────────────
+const FORECAST_WAYPOINTS = [
+  { label: 'Le Puy-en-Velay',    zone: 'Margeride',  lat: 45.0433, lon: 3.8853,  day: 0,  date: '2026-04-15' },
+  { label: 'Domaine du Sauvage', zone: 'Margeride',  lat: 44.8303, lon: 3.4569,  day: 3,  date: '2026-04-17' },
+  { label: 'Nasbinals',          zone: 'Aubrac ⚠',   lat: 44.6623, lon: 3.0456,  day: 5,  date: '2026-04-19' },
+  { label: 'Estaing',            zone: 'Lot valley', lat: 44.5573, lon: 2.6708,  day: 7,  date: '2026-04-21' },
+  { label: 'Conques',            zone: 'Lot valley', lat: 44.6003, lon: 2.3969,  day: 8,  date: '2026-04-22' },
+  { label: 'Montredon',          zone: 'Lot valley', lat: 44.6095, lon: 2.1360,  day: 9,  date: '2026-04-23' },
+  { label: 'Lacapelle-Marival',  zone: 'Quercy',     lat: 44.7357, lon: 1.8540,  day: 10, date: '2026-04-24' },
+  { label: 'Rocamadour',         zone: 'Quercy',     lat: 44.7992, lon: 1.6161,  day: 11, date: '2026-04-25' },
+  { label: 'Vers',               zone: 'Quercy',     lat: 44.5042, lon: 1.5575,  day: 13, date: '2026-04-27' },
+  { label: 'Lauzerte',           zone: 'Quercy',     lat: 44.2517, lon: 1.1353,  day: 15, date: '2026-04-29' },
+  { label: 'Moissac',            zone: 'Quercy',     lat: 44.1042, lon: 1.0836,  day: 16, date: '2026-04-30' },
+];
+
+const WMO_LABELS = {
+  0:'☀ Clear',1:'🌤 Mainly clear',2:'⛅ Partly cloudy',3:'☁ Overcast',
+  45:'🌫 Fog',48:'🌫 Icy fog',51:'🌦 Light drizzle',53:'🌦 Drizzle',55:'🌧 Heavy drizzle',
+  61:'🌧 Light rain',63:'🌧 Rain',65:'🌧 Heavy rain',
+  71:'🌨 Light snow',73:'🌨 Snow',75:'❄ Heavy snow',77:'🌨 Snow grains',
+  80:'🌦 Showers',81:'🌧 Heavy showers',82:'⛈ Violent showers',
+  85:'🌨 Snow showers',86:'❄ Heavy snow showers',
+  95:'⛈ Thunderstorm',96:'⛈ Thunderstorm+hail',99:'⛈ Severe thunderstorm',
+};
+
+async function buildForecastWidget() {
+  const el = document.getElementById('forecastGrid');
+  const ts = document.getElementById('forecastTimestamp');
+  if (!el) return;
+
+  // Chrome blocks fetch() from file:// — detect and show helpful message
+  if (window.location.protocol === 'file:') {
+    el.innerHTML = `<div style="grid-column:1/-1;background:var(--parchment);border:1px solid var(--border);border-radius:10px;padding:18px 20px;font-size:12.5px;color:var(--ink-mid);line-height:1.9">
+      <strong style="color:var(--ink)">Live forecast unavailable when opening from file://</strong><br>
+      Chrome blocks weather API requests when the file is opened locally. To see live forecasts:<br>
+      <strong>Option 1:</strong> Open in Safari (works directly from file)<br>
+      <strong>Option 2:</strong> Open from <a href="https://connorm-19.github.io/tools/" target="_blank" style="color:var(--pilgrim)">GitHub Pages</a>
+    </div>`;
+    if (ts) ts.textContent = 'Unavailable · file:// protocol';
+    return;
+  }
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const maxDate = new Date(today); maxDate.setDate(maxDate.getDate() + 15);
+
+  const results = [];
+  for (const wp of FORECAST_WAYPOINTS) {
+    const walkDate = new Date(wp.date);
+    const daysUntil = Math.round((walkDate - today) / 86400000);
+    let status = walkDate > maxDate ? 'future' : walkDate < today ? 'past' : 'pending';
+    let data = null;
+
+    if (status === 'pending') {
+      try {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${wp.lat}&longitude=${wp.lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,weathercode,windspeed_10m_max&timezone=Europe%2FParis&forecast_days=16`;
+        const json = await (await fetch(url)).json();
+        const idx = json.daily.time.indexOf(wp.date);
+        if (idx >= 0) {
+          data = {
+            max:  Math.round(json.daily.temperature_2m_max[idx]),
+            min:  Math.round(json.daily.temperature_2m_min[idx]),
+            rain: (json.daily.precipitation_sum[idx] ?? 0).toFixed(1),
+            prob: json.daily.precipitation_probability_max[idx] ?? 0,
+            wind: Math.round(json.daily.windspeed_10m_max[idx]),
+            wmo:  json.daily.weathercode[idx],
+          };
+          status = 'live';
+        } else { status = 'future'; }
+      } catch(e) { status = 'error'; }
+    }
+    results.push({ ...wp, status, data, daysUntil });
+  }
+
+  const liveCount = results.filter(r => r.status === 'live').length;
+  let html = '';
+
+  if (liveCount === 0) {
+    const daysToWindow = results[0].daysUntil - 15;
+    const windowOpens = new Date(today); windowOpens.setDate(windowOpens.getDate() + daysToWindow);
+    html = `<div style="grid-column:1/-1;background:var(--parchment);border:1px solid var(--border);border-radius:10px;padding:18px 20px;font-size:12.5px;color:var(--ink-mid);line-height:1.9">
+      <strong style="color:var(--ink)">Walk starts in ${results[0].daysUntil} days</strong> — forecast window not yet open.<br>
+      Live data will appear from <strong>${windowOpens.toLocaleDateString('en-GB',{day:'numeric',month:'long'})}</strong> onwards, updating each time you open this file.
+      <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px">
+        ${results.map(r=>`<span style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--ink-soft)">
+          D${r.day} ${r.label} · ${new Date(r.date).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}
+        </span>`).join('')}
+      </div>
+    </div>`;
+  } else {
+    for (const r of results) {
+      const zc = r.zone.includes('⚠') ? '#c0392b' : 'var(--ink-soft)';
+      const dayLabel = `D${r.day} · ${new Date(r.date).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}`;
+      if (r.status === 'live' && r.data) {
+        const d = r.data;
+        const rainColor = d.prob > 60 ? '#c0392b' : d.prob > 35 ? '#b07030' : 'var(--ink-soft)';
+        const snowRisk = r.zone.includes('⚠') && d.min <= 2;
+        html += `<div style="border:1px solid var(--border);border-radius:10px;padding:14px;position:relative;overflow:hidden">
+          ${snowRisk?'<div style="position:absolute;top:0;left:0;right:0;height:3px;background:#c0392b"></div>':''}
+          <div style="font-size:9.5px;color:${zc};font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">${r.zone}</div>
+          <div style="font-weight:600;font-size:13px">${r.label}</div>
+          <div style="font-size:10.5px;color:var(--ink-faint);margin-bottom:8px">${dayLabel}</div>
+          <div style="font-size:18px;margin-bottom:8px">${WMO_LABELS[d.wmo]||'—'}</div>
+          <div style="font-size:11.5px;color:var(--ink-mid);line-height:2">
+            🌡 <strong style="color:var(--ink)">${d.max}°</strong> / ${d.min}°C<br>
+            <span style="color:${rainColor}">🌧 ${d.prob}% · ${d.rain}mm</span><br>
+            💨 ${d.wind} km/h${snowRisk?' &nbsp;<span style="color:#c0392b;font-size:10px">⚠ snow risk</span>':''}
+          </div>
+          <div style="margin-top:8px;font-size:9.5px;color:var(--ink-faint)">Live · Open-Meteo</div>
+        </div>`;
+      } else if (r.status === 'future') {
+        html += `<div style="border:1px dashed var(--border);border-radius:10px;padding:14px;opacity:.55">
+          <div style="font-size:9.5px;color:${zc};font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">${r.zone}</div>
+          <div style="font-weight:600;font-size:13px">${r.label}</div>
+          <div style="font-size:10.5px;color:var(--ink-faint);margin-bottom:8px">${dayLabel}</div>
+          <div style="font-size:11.5px;color:var(--ink-faint)">In forecast ${r.daysUntil - 15}d</div>
+        </div>`;
+      }
+    }
+    if (liveCount < results.length) {
+      const remaining = results.length - liveCount;
+      html += `<div style="grid-column:1/-1;font-size:10.5px;color:var(--ink-faint);padding:2px">
+        ${liveCount} of ${results.length} waypoints in forecast window · ${remaining} stage${remaining>1?'s':''} appear as dates approach
+      </div>`;
+    }
+  }
+
+  el.innerHTML = html;
+  if (ts) ts.textContent = 'Updated ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) + ' · ' + new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+}
+
+buildForecastWidget();
+
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 :root {
@@ -77,6 +210,8 @@ tbody tr.variant-row{background:rgba(176,112,48,0.04)}
 tbody tr.variant-row:hover{background:rgba(176,112,48,0.09)}
 tbody tr.warn-row{background:rgba(192,57,43,0.03)}
 tbody tr.warn-row:hover{background:rgba(192,57,43,0.06)}
+tbody tr.pending-row{background:rgba(184,134,11,0.03)}
+tbody tr.pending-row:hover{background:rgba(184,134,11,0.06)}
 td{padding:10px 12px;color:var(--ink-mid);vertical-align:middle}
 td.r{text-align:right}
 td.num{font-family:'Playfair Display',serif;font-size:14px;font-weight:600;color:var(--ink)}
@@ -87,7 +222,16 @@ td.ele-cell{font-size:11px;white-space:nowrap;color:var(--ink-soft)}
 .badge{display:inline-block;font-size:9.5px;font-weight:500;padding:2px 7px;border-radius:999px;vertical-align:middle;margin-left:4px;white-space:nowrap}
 .b-variant{background:rgba(176,112,48,0.12);color:var(--variant)}
 .b-warn{background:rgba(192,57,43,0.1);color:var(--red)}
+.b-booked{background:rgba(46,107,74,0.12);color:var(--green)}
+.b-pending{background:rgba(184,134,11,0.12);color:#b8860b}
 .b-travel{background:rgba(90,70,50,0.08);color:var(--ink-soft)}
+.booked-banner{background:var(--green-soft);border:1px solid rgba(46,107,74,0.2);border-radius:6px;padding:7px 12px;font-size:11.5px;color:#1a4a30;line-height:1.6;margin-top:5px}
+.pending-banner{background:#fefce8;border:1px solid rgba(184,134,11,0.3);border-radius:6px;padding:7px 12px;font-size:11.5px;color:#7a5c00;line-height:1.6;margin-top:5px}
+.booking-links-block{margin-top:6px;padding:8px 10px;background:var(--parchment);border-radius:6px;border-left:2px solid var(--gold);font-size:11.5px}
+.booking-links-block table{width:100%;border-collapse:collapse}
+.booking-links-block td{padding:2px 6px 2px 0;vertical-align:top;line-height:1.5}
+tbody tr.booked-row{background:rgba(46,107,74,0.03)}
+tbody tr.booked-row:hover{background:rgba(46,107,74,0.07)}
 .warn-banner{background:var(--red-soft);border:1px solid rgba(192,57,43,0.2);border-radius:6px;padding:7px 12px;font-size:11.5px;color:#8b1a14;line-height:1.6;margin-top:5px}
 
 .footnote{font-size:11.5px;color:var(--ink-faint);line-height:1.7;margin-top:20px;border-top:1px solid var(--border);padding-top:16px}
@@ -126,8 +270,10 @@ td.ele-cell{font-size:11px;white-space:nowrap;color:var(--ink-soft)}
   <div class="map-legend">
     <span><span class="ld" style="background:#3a2a1a"></span>Main GR65</span>
     <span><span class="ld" style="background:#b07030"></span>Rocamadour variant</span>
-    <span><span class="ld" style="background:#c0392b"></span>Book early</span>
-    <span style="font-size:11px;color:var(--ink-faint)">Click any marker for details</span>
+    <span><span class="ld" style="background:#c0392b"></span>Book now</span>
+    <span><span class="ld" style="background:#b8860b"></span>⏳ Pending</span>
+    <span><span class="ld" style="background:#2e6b4a"></span>✓ Booked</span>
+    <span style="font-size:11px;color:var(--ink-faint)">Click any marker for booking info</span>
   </div>
 
   <!-- CHARTS -->
@@ -174,51 +320,35 @@ td.ele-cell{font-size:11px;white-space:nowrap;color:var(--ink-soft)}
   <div class="section-head"><h2>Weather &amp; field notes</h2><div class="rule"></div></div>
   <div class="charts-grid" style="margin-bottom:28px">
 
-    <!-- WEATHER ZONES -->
+    <!-- LIVE FORECAST WIDGET -->
     <div class="chart-card" style="grid-column:1/-1">
-      <p class="chart-title">Average April conditions by terrain zone</p>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:4px">
-
-        <div style="border:1px solid var(--border);border-radius:8px;padding:14px">
-          <div style="font-weight:500;font-size:12.5px;margin-bottom:8px">🏔 Margeride plateau <span style="font-size:10px;color:var(--ink-faint)">D1–D4 · 900–1300m</span></div>
-          <div style="font-size:12px;color:var(--ink-mid);line-height:1.8">
-            High <strong>10–13°C</strong> · Low <strong>1–3°C</strong><br>
-            Rain ~27% of days · Light snow possible at night<br>
-            Wind 20 km/h avg · 44% sunny hours<br>
-            <span style="color:#8b7060;font-size:11px">Pack layers. Mornings cold, afternoons mild.</span>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+        <p class="chart-title" style="margin:0">Live forecast · key waypoints</p>
+        <span id="forecastTimestamp" style="font-size:10.5px;color:var(--ink-faint)">Loading…</span>
+      </div>
+      <div id="forecastGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px">
+        <div style="color:var(--ink-faint);font-size:12px;padding:12px 0">Fetching forecast…</div>
+      </div>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+        <p class="chart-title" style="margin-bottom:10px">Average April conditions by terrain zone</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;font-size:11.5px">
+          <div style="border:1px solid var(--border);border-radius:8px;padding:12px">
+            <div style="font-weight:600;margin-bottom:6px">🏔 Margeride <span style="font-size:10px;font-weight:400;color:var(--ink-faint)">D1–D4 · 900–1300m</span></div>
+            <div style="color:var(--ink-mid);line-height:1.8">High 10–13°C · Low 1–3°C<br>Rain ~27% · Snow possible at night<br><span style="color:#8b7060;font-size:10.5px">Pack layers. Cold mornings.</span></div>
+          </div>
+          <div style="border:1px solid var(--border);border-left:3px solid #c0392b;border-radius:8px;padding:12px">
+            <div style="font-weight:600;margin-bottom:6px">⚠ Aubrac <span style="font-size:10px;font-weight:400;color:var(--ink-faint)">D5–D6 · 1040–1370m</span></div>
+            <div style="color:var(--ink-mid);line-height:1.8">High 9–13°C · Low 1–3°C<br>Rain/snow ~32% · Fully exposed<br><span style="color:#c0392b;font-size:10.5px">Check night before. Snow recorded late May. No shelter 26km.</span></div>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:8px;padding:12px">
+            <div style="font-weight:600;margin-bottom:6px">🌿 Lot valley <span style="font-size:10px;font-weight:400;color:var(--ink-faint)">D7–D9 · 200–500m</span></div>
+            <div style="color:var(--ink-mid);line-height:1.8">High 16–18°C · Low 6–8°C<br>Rain ~20% · No snow risk<br><span style="color:#8b7060;font-size:10.5px">Strip the layers after Saint-Chély descent.</span></div>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:8px;padding:12px">
+            <div style="font-weight:600;margin-bottom:6px">🌾 Quercy <span style="font-size:10px;font-weight:400;color:var(--ink-faint)">D10–D16 · 100–450m</span></div>
+            <div style="color:var(--ink-mid);line-height:1.8">High 17–18°C · Low 7–9°C<br>Rain ~20% · April wettest in Cahors<br><span style="color:#8b7060;font-size:10.5px">Bring a rain layer.</span></div>
           </div>
         </div>
-
-        <div style="border:1px solid var(--border);border-radius:8px;padding:14px;border-left:3px solid #c0392b">
-          <div style="font-weight:500;font-size:12.5px;margin-bottom:8px">⚠ Aubrac plateau <span style="font-size:10px;color:var(--ink-faint)">D5–D6 · 1040–1370m</span></div>
-          <div style="font-size:12px;color:var(--ink-mid);line-height:1.8">
-            High <strong>9–13°C</strong> · Low <strong>1–3°C</strong><br>
-            Rain/snow ~32% of days · <strong>Late snow possible</strong><br>
-            Wind 24 km/h avg · Completely exposed<br>
-            <span style="color:#c0392b;font-size:11px">Check forecast the night before. Snow has been recorded on this plateau in late May. Fog can make trail markers invisible. No shelter AA→Nasbinals (26km).</span>
-          </div>
-        </div>
-
-        <div style="border:1px solid var(--border);border-radius:8px;padding:14px">
-          <div style="font-weight:500;font-size:12.5px;margin-bottom:8px">🌿 Lot valley <span style="font-size:10px;color:var(--ink-faint)">D7–D9 · 200–500m</span></div>
-          <div style="font-size:12px;color:var(--ink-mid);line-height:1.8">
-            High <strong>16–18°C</strong> · Low <strong>6–8°C</strong><br>
-            Rain ~20% of days · No snow risk<br>
-            Sheltered, wooded, significantly warmer<br>
-            <span style="color:#8b7060;font-size:11px">Pleasant walking. Strip the layers after Saint-Chély descent.</span>
-          </div>
-        </div>
-
-        <div style="border:1px solid var(--border);border-radius:8px;padding:14px">
-          <div style="font-weight:500;font-size:12.5px;margin-bottom:8px">🌾 Quercy / Lot <span style="font-size:10px;color:var(--ink-faint)">D10–D16 · 100–450m</span></div>
-          <div style="font-size:12px;color:var(--ink-mid);line-height:1.8">
-            High <strong>17–18°C</strong> · Low <strong>7–9°C</strong><br>
-            Rain ~20% of days · April is wettest month in Cahors<br>
-            Rolling limestone causse — some exposed ridges<br>
-            <span style="color:#8b7060;font-size:11px">Most consistently pleasant zone. Bring a rain layer — April showers are common.</span>
-          </div>
-        </div>
-
       </div>
     </div>
 
@@ -284,23 +414,40 @@ td.ele-cell{font-size:11px;white-space:nowrap;color:var(--ink-soft)}
 </footer>
 
 <script>
+const BOOKING_LINKS = {
+  2: `<table style="width:100%;border-collapse:collapse"><tr><td style="padding:2px 0;white-space:nowrap">Gîte Communal</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33665150432" target="_blank" style="color:#25D366;text-decoration:none">📱 06 65 15 04 32</a> · 15 beds · Apr 19–Oct</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Itier-Martins</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33672754648" target="_blank" style="color:#25D366;text-decoration:none">📱 06 72 75 46 48</a> · <a href="https://gite-itier-martins.fr" target="_blank">🌐 gite-itier-martins.fr</a> · jesusvidal163@gmail.com</td></tr><tr><td style="padding:2px 0;white-space:nowrap">La Dentelle du Camino</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33784769227" target="_blank" style="color:#25D366;text-decoration:none">📱 07 84 76 92 27</a> · <a href="https://www.ladentelleducamino.fr" target="_blank">🌐 ladentelleducamino.fr</a> · demi-pension · 15 beds</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Au Lion d'Or — Maud</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33656807562" target="_blank" style="color:#25D366;text-decoration:none">📱 06 56 80 75 62</a> · 12 beds · All Year · former pilgrim host</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Centre La Margeride</td><td style="padding:2px 0 2px 8px;color:#6b5e52">04 71 77 60 97 · 40 beds · Mar–Oct</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Auberge Chez Virginie</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33627558966" target="_blank" style="color:#25D366;text-decoration:none">📱 06 27 55 89 66</a> · 10 beds · All Year</td></tr></table>`,
+  4: `<table style="width:100%;border-collapse:collapse"><tr><td style="padding:2px 0;white-space:nowrap">La Ferme du Barry</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33676341730" target="_blank" style="color:#25D366;text-decoration:none">📱 06 76 34 17 30</a> · <a href="https://www.gite-fermedubarry.fr" target="_blank">🌐 gite-fermedubarry.fr</a> · fermedubarry@yahoo.fr · 36 beds</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Chemin-Faisant</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33624831936" target="_blank" style="color:#25D366;text-decoration:none">📱 06 24 83 19 36</a> · 20 beds · All Year</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Route d'Aubrac</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33676684390" target="_blank" style="color:#25D366;text-decoration:none">📱 06 76 68 43 90</a> · 15 beds · All Year</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte les Sentiers Fleuris</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33642648002" target="_blank" style="color:#25D366;text-decoration:none">📱 06 42 64 80 02</a> · 20 beds · Mar 15–Oct 15</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Ô mon Aubrac</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33620785606" target="_blank" style="color:#25D366;text-decoration:none">📱 06 20 78 56 06</a> · 8 beds · Apr 1–Nov 15</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Chez Pierrot</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33688018458" target="_blank" style="color:#25D366;text-decoration:none">📱 06 88 01 84 58</a> · 10 beds · Apr–Sept</td></tr></table>`,
+  5: `<table style="width:100%;border-collapse:collapse"><tr><td style="padding:2px 0;white-space:nowrap">Gîte NADA</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33632184353" target="_blank" style="color:#25D366;text-decoration:none">📱 06 32 18 43 53</a> · <a href="http://www.nada-aubrac.com" target="_blank">🌐 nada-aubrac.com</a> · contact@nada-aubrac.com · €13–16 · 45 beds</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Le Sorbier</td><td style="padding:2px 0 2px 8px;color:#6b5e52">04 66 32 56 79 · 19 beds · All Year</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Communal Nasbinals</td><td style="padding:2px 0 2px 8px;color:#6b5e52">04 66 32 59 47 · <a href="https://www.nasbinals.fr/gite-communal/" target="_blank">🌐 nasbinals.fr</a> · mairie@communedenasbinals.fr · 19 beds</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte La Grappière</td><td style="padding:2px 0 2px 8px;color:#6b5e52">04 66 32 15 60 · 13 beds · Apr 1–Oct 15</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Lo Fenador</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33695083668" target="_blank" style="color:#25D366;text-decoration:none">📱 06 95 08 36 68</a> · 10 beds · Apr–Oct</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Au Bon Repos du Pèlerin</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33684042140" target="_blank" style="color:#25D366;text-decoration:none">📱 06 84 04 21 40</a> · 5 beds · All Year</td></tr></table>`,
+  6: `<table style="width:100%;border-collapse:collapse"><tr><td style="padding:2px 0;white-space:nowrap">Couvent de Malet (500m before village)</td><td style="padding:2px 0 2px 8px;color:#6b5e52">05 65 51 03 20 · 60 beds · All Year</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte del Roumiou — Sophie &amp; Gaétan</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33635591605" target="_blank" style="color:#25D366;text-decoration:none">📱 06 35 59 16 05</a> · <a href="https://gite-delroumiou.jimdofree.com" target="_blank">🌐 gite-delroumiou.jimdofree.com</a> · gitesaintcome@gmail.com · €43 demi-pension</td></tr><tr><td style="padding:2px 0;white-space:nowrap">l'Antidote</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33641906289" target="_blank" style="color:#25D366;text-decoration:none">📱 06 41 90 62 89</a> · 8 beds · All Year</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte La Halte d'Olt</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33679083872" target="_blank" style="color:#25D366;text-decoration:none">📱 06 79 08 38 72</a> · lahaltedolt@gmail.com · 7 beds · All Year</td></tr><tr><td style="padding:2px 0;white-space:nowrap">La Casa de Annie</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33637209676" target="_blank" style="color:#25D366;text-decoration:none">📱 06 37 20 96 76</a> · 8 beds · Mar–Oct</td></tr></table>`,
+  7: `<table style="width:100%;border-collapse:collapse"><tr><td style="padding:2px 0;white-space:nowrap">Gîte Communal</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33644955214" target="_blank" style="color:#25D366;text-decoration:none">📱 06 44 95 52 14</a> · <a href="https://www.gitecommunalestaing.fr" target="_blank">🌐 gitecommunalestaing.fr</a> · gitecommunal@estaing12.fr · 22 beds</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Saint-Christophe — Marie &amp; Rémi</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33627824014" target="_blank" style="color:#25D366;text-decoration:none">📱 06 27 82 40 14</a> · <a href="https://www.gite-etape-saint-christophe.com" target="_blank">🌐 gite-etape-saint-christophe.com</a> · €27/night or €45 demi-pension</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Les Pieds dans l'Olt</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33663338822" target="_blank" style="color:#25D366;text-decoration:none">📱 06 63 33 88 22</a> · 10 beds · Mar–Oct</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte L'Oustal del Camin</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33767291507" target="_blank" style="color:#25D366;text-decoration:none">📱 07 67 29 15 07</a> · 12 beds · Apr–Oct</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Chez Aurélie</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33695821595" target="_blank" style="color:#25D366;text-decoration:none">📱 06 95 82 15 95</a> · 7 beds · All Year</td></tr></table>`,
+  8: `<table style="width:100%;border-collapse:collapse"><tr><td style="padding:2px 0;white-space:nowrap"><strong>⚠ Booking request pending — ref 461595</strong></td><td style="padding:2px 0 2px 8px;color:#6b5e52">Abbaye Sainte-Foy · awaiting email confirmation</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Chez François (backup)</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33688702766" target="_blank" style="color:#25D366;text-decoration:none">📱 06 88 70 27 66</a> · 15 beds · Mar–Oct</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Les Pieds dans l'Eau</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33625203016" target="_blank" style="color:#25D366;text-decoration:none">📱 06 25 20 30 16</a> · 6 beds · All Year</td></tr></table>`,
+  9: `<table style="width:100%;border-collapse:collapse"><tr><td style="padding:2px 0;white-space:nowrap"><strong>Montredon (closest to Le Terly, ~35km):</strong></td><td></td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte La Mariotte — Damien</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33768539646" target="_blank" style="color:#25D366;text-decoration:none">📱 07 68 53 96 46</a> · <a href="https://gitelamariotte.com" target="_blank">🌐 gitelamariotte.com</a> · contact@gitelamariotte.com · 12 beds · All Year</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Bien et Toit</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33609485693" target="_blank" style="color:#25D366;text-decoration:none">📱 06 09 48 56 93</a> · <a href="https://www.bien-et-toit.fr" target="_blank">🌐 bien-et-toit.fr</a> · pool · 8 beds · Apr–Oct</td></tr><tr><td style="padding:2px 0;white-space:nowrap"><strong>Le Terly (~35km):</strong></td><td></td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte le Fournil du Terly</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33607748896" target="_blank" style="color:#25D366;text-decoration:none">📱 06 07 74 88 96</a> · 12 beds · Apr–Oct · dinner available</td></tr><tr><td style="padding:2px 0;white-space:nowrap"><strong>Figeac (12km further, ~47km):</strong></td><td></td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte le Pont du Pin</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33633345975" target="_blank" style="color:#25D366;text-decoration:none">📱 06 33 34 59 75</a> · 9 beds · Apr–Oct</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Pélerins le Maquis</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33633411195" target="_blank" style="color:#25D366;text-decoration:none">📱 06 33 41 11 95</a> · 14 beds · Apr 15–Oct 13</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte du Gua</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33674732269" target="_blank" style="color:#25D366;text-decoration:none">📱 06 74 73 22 69</a> · 15 beds · All Year</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte le Coquelicot</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33627586754" target="_blank" style="color:#25D366;text-decoration:none">📱 06 27 58 67 54</a> · 15 beds · Apr–Oct</td></tr></table>`,
+  10: `<table style="width:100%;border-collapse:collapse"><tr><td style="padding:2px 0;white-space:nowrap">Gîte le Cèdre Bleu</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33641999520" target="_blank" style="color:#25D366;text-decoration:none">📱 06 41 99 95 20</a> · 14 beds · Apr–Oct</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Camping Bois de Sophie</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33680597986" target="_blank" style="color:#25D366;text-decoration:none">📱 06 80 59 79 86</a> · Apr–Sept</td></tr></table>`,
+  11: `<table style="width:100%;border-collapse:collapse"><tr><td style="padding:2px 0;white-space:nowrap">Relais du Pèlerin</td><td style="padding:2px 0 2px 8px;color:#6b5e52">05 65 33 23 23 · 80 beds · All Year</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Chrétien Le Cantou</td><td style="padding:2px 0 2px 8px;color:#6b5e52">05 65 33 73 69 · 14 beds · Mar–Nov</td></tr></table>`,
+  12: `<table style="width:100%;border-collapse:collapse"><tr><td style="padding:2px 0;white-space:nowrap">Auberge du Roi de Naples</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33763424547" target="_blank" style="color:#25D366;text-decoration:none">📱 07 63 42 45 47</a> · 12 beds · Apr–Oct 14</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Le Refuge des Gazelles</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33685646207" target="_blank" style="color:#25D366;text-decoration:none">📱 06 85 64 62 07</a> · 11 beds · Apr–Oct</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Les Volets Rouges</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33784849910" target="_blank" style="color:#25D366;text-decoration:none">📱 07 84 84 99 10</a> · 14 beds · Apr–Oct</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Le Savitri</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33674401415" target="_blank" style="color:#25D366;text-decoration:none">📱 06 74 40 14 15</a> · 13 beds · Apr–Oct</td></tr></table>`,
+  13: `<table style="width:100%;border-collapse:collapse"><tr><td style="padding:2px 0;white-space:nowrap"><strong>⚠ Only 1 gîte option in Vers:</strong></td><td></td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte le Monde Allant Vers — Tony</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33685653078" target="_blank" style="color:#25D366;text-decoration:none">📱 06 85 65 30 78</a> · <a href="https://www.lemondeallantvers.fr" target="_blank">🌐 lemondeallantvers.fr</a> · 8 beds · Apr–Oct · pool &amp; riverside</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Camping de l'Arquette (backup)</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33641998326" target="_blank" style="color:#25D366;text-decoration:none">📱 06 41 99 83 26</a> · May–Sept</td></tr></table>`,
+  14: `<table style="width:100%;border-collapse:collapse"><tr><td style="padding:2px 0;white-space:nowrap">Le Nid des Anges</td><td style="padding:2px 0 2px 8px;color:#6b5e52">05 65 35 27 42 · 15 beds · Mar–Oct</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte d'Étape Le Bouy</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33659729924" target="_blank" style="color:#25D366;text-decoration:none">📱 06 59 72 99 24</a> · 11 beds · Apr–Oct 15</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Yourte Le Sabatier</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33682133013" target="_blank" style="color:#25D366;text-decoration:none">📱 06 82 13 30 13</a> · 12 beds · Apr 15–Oct 15</td></tr></table>`,
+  15: `<table style="width:100%;border-collapse:collapse"><tr><td style="padding:2px 0;white-space:nowrap">Gîte Les Figuiers</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33685317131" target="_blank" style="color:#25D366;text-decoration:none">📱 06 85 31 71 31</a> · <a href="https://www.lesfiguiers-lauzerte.com" target="_blank">🌐 lesfiguiers-lauzerte.com</a> · accueil@lesfiguiers-lauzerte.com · 21 beds</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte l'Abeille Lulu</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33687055360" target="_blank" style="color:#25D366;text-decoration:none">📱 06 87 05 53 60</a> · 9 beds · All Year</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Chez Serge</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33672241985" target="_blank" style="color:#25D366;text-decoration:none">📱 06 72 24 19 85</a> · 5 beds · Apr–Oct</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Pastel</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33658201958" target="_blank" style="color:#25D366;text-decoration:none">📱 06 58 20 19 58</a> · 9 beds · May–Oct</td></tr><tr><td style="padding:2px 0;white-space:nowrap">La Luciole de Chemin</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33778476377" target="_blank" style="color:#25D366;text-decoration:none">📱 07 78 47 63 77</a> · 5 beds · Apr 15–Oct</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Au Coin Perdu</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33777788870" target="_blank" style="color:#25D366;text-decoration:none">📱 07 77 78 88 70</a> · 7 beds · May 15–Oct 15</td></tr></table>`,
+  16: `<table style="width:100%;border-collapse:collapse"><tr><td style="padding:2px 0;white-space:nowrap">L'Ancien Carmel (CAF)</td><td style="padding:2px 0 2px 8px;color:#6b5e52">05 63 04 62 21 · <a href="https://www.lanciencarmelmoissac.com" target="_blank">🌐 lanciencarmelmoissac.com</a> · 80 beds · All Year</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Les Etoiles — Guy</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33625630016" target="_blank" style="color:#25D366;text-decoration:none">📱 06 25 63 00 16</a> · <a href="http://www.gite-moissac.com" target="_blank">🌐 gite-moissac.com</a> · contact@gite-moissac.com · 13 beds · Apr 15–Oct 15</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Ultreia</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33671740314" target="_blank" style="color:#25D366;text-decoration:none">📱 06 71 74 03 14</a> · <a href="https://ultreiamoissac.com" target="_blank">🌐 ultreiamoissac.com</a> · 10 beds · Mar–Nov</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Auberge des Chemins</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33624348087" target="_blank" style="color:#25D366;text-decoration:none">📱 06 24 34 80 87</a> · <a href="https://www.aubergedeschemins.com" target="_blank">🌐 aubergedeschemins.com</a> · 15 beds · Apr–Nov</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte Aliénor de Moissac</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33787900721" target="_blank" style="color:#25D366;text-decoration:none">📱 07 87 90 07 21</a> · 15 beds · All Year</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Gîte l'Escale du Bonheur</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33631131269" target="_blank" style="color:#25D366;text-decoration:none">📱 06 31 13 12 69</a> · 11 beds · All Year</td></tr><tr><td style="padding:2px 0;white-space:nowrap">Comme un Air de Voyage</td><td style="padding:2px 0 2px 8px;color:#6b5e52"><a href="https://wa.me/33620420363" target="_blank" style="color:#25D366;text-decoration:none">📱 06 20 42 03 63</a> · 8 beds · All Year</td></tr></table>`,
+};
+
 const STAGES = [
-  {day:1, date:"Apr 15", from:"Le Puy-en-Velay",      to:"Montbonnet",              km:16.7, gain:326,  loss:59,   variant:false, gites:3,  gite_note:"3 private gîtes (~44 beds)",                         warn:false, warn_msg:"", lat:45.0017, lon:3.8149},
-  {day:2, date:"Apr 16", from:"Montbonnet",            to:"Saugues",                 km:26.1, gain:970,  loss:913,  variant:false, gites:5,  gite_note:"1 municipal + 4 private gîtes",                      warn:false, warn_msg:"", lat:44.9622, lon:3.5400},
-  {day:3, date:"Apr 17", from:"Saugues",               to:"Domaine du Sauvage",      km:22.5, gain:608,  loss:272,  variant:false,  gites:1,  gite_note:"Gîte Le Sauvage — 41 beds, €18, communal half-board farm meals.",  warn:false, warn_msg:"", lat:44.8303, lon:3.4569},
-  {day:4, date:"Apr 18", from:"Domaine du Sauvage",    to:"Aumont-Aubrac",           km:25.1, gain:443,  loss:694,  variant:false,  gites:6,  gite_note:"6+ gîtes (Route d'Aubrac, Ferme du Barry, Chemin Faisant, La Ferme de l'Aubrac, others). Supermarket, pharmacy, Michelin-starred Cyril Attrazic.", warn:false, warn_msg:"", lat:44.7230, lon:3.2858},
-  {day:5, date:"Apr 19", from:"Aumont-Aubrac",         to:"Nasbinals",               km:26.1, gain:759,  loss:496,  variant:false,  gites:7,  gite_note:"7+ gîtes: NADA (38 beds, €12), Équestre (22, €40), Communal (19, €12–15), Lô D'ici (20, €30), La Grappière (15), Lo Fenador (10), Au Bon Repos (5). Hotels also available.", warn:false, warn_msg:"", lat:44.6580, lon:2.9929},
-  {day:6, date:"Apr 20", from:"Nasbinals",             to:"Saint-Côme-d'Olt",        km:33.4, gain:582,  loss:1535, variant:false,  gites:4,  gite_note:"4+ gîtes & chambres d'hôtes. Municipal gîte with views of the famous twisted steeple. One of France's Plus Beaux Villages.", warn:false, warn_msg:"", lat:44.5036, lon:2.8289},
-  {day:7, date:"Apr 21", from:"Saint-Côme-d'Olt",      to:"Estaing",                 km:20.5, gain:697,  loss:717,  variant:false,  gites:6,  gite_note:"1 municipal + 5 private gîtes (~83 beds). Estaing is one of France's Plus Beaux Villages — arrive early and take the afternoon.", warn:false, warn_msg:"", lat:44.5698, lon:2.6660},
-  {day:8, date:"Apr 22", from:"Estaing",               to:"Conques",                 km:35.7, gain:1165, loss:1193, variant:false, gites:5,  gite_note:"~5 gîtes + abbaye hostel — VERY LIMITED. Book immediately.",                                                                         warn:true,  warn_msg:"Conques is tiny and very popular even in April. Book as soon as your dates are confirmed — do not leave this one late.", lat:44.6003, lon:2.3969},
-  {day:9, date:"Apr 23", from:"Conques",               to:"Le Terly (Figeac)",       km:34.5, gain:1265, loss:1300, variant:false, gites:4,  gite_note:"~4 gîtes in Figeac area (Terly + Figeac). Check availability — 2 gîtes recently closed.",                                              warn:true,  warn_msg:"2 gîtes in the Figeac area recently closed. Verify accommodation at Le Terly or Figeac early.", lat:44.6088, lon:2.0320},
-  {day:10,date:"Apr 24", from:"Le Terly",              to:"Lacapelle-Marival",       km:22.8, gain:610,  loss:422,  variant:true, gites:3,  gite_note:"3 gîtes & chambres d'hôtes",                                                                                                         warn:false, warn_msg:"", lat:44.7289, lon:1.9238},
-  {day:11,date:"Apr 25", from:"Lacapelle-Marival",     to:"Rocamadour",              km:33.9, gain:320,  loss:521,  variant:true, gites:6,  gite_note:"~6 pilgrim gîtes & religious hospice",                                                                                                warn:false, warn_msg:"", lat:44.7991, lon:1.6196},
-  {day:12,date:"Apr 26", from:"Rocamadour",            to:"Labastide-Murat",         km:27.7, gain:740,  loss:551,  variant:true, gites:3,  gite_note:"3 gîtes & chambres d'hôtes",                                                                                                         warn:false, warn_msg:"", lat:44.6478, lon:1.5663},
-  {day:13,date:"Apr 27", from:"Labastide-Murat",       to:"Vers",                    km:24.0, gain:263,  loss:571,  variant:true, gites:2,  gite_note:"2 gîtes (small village)",                                                                                                            warn:false, warn_msg:"", lat:44.5042, lon:1.5575},
-  {day:14,date:"Apr 28", from:"Vers",                  to:"Lascabannes (via Cahors)", km:33.4, gain:766, loss:614,  variant:false,  gites:2,  gite_note:"2 gîtes at Lascabannes (hamlet). Cahors overnight no longer — stop for lunch, Pont Valentré, old town.",                               warn:false, warn_msg:"", lat:44.3629, lon:1.3733},
-  {day:15,date:"Apr 29", from:"Lascabannes",           to:"Lauzerte",                km:32.6, gain:783,  loss:857,  variant:false, gites:4,  gite_note:"4 gîtes & chambres d'hôtes",                                                                                                         warn:false, warn_msg:"", lat:44.2591, lon:1.1367},
-  {day:16,date:"Apr 30", from:"Lauzerte",              to:"Moissac",                 km:28.3, gain:595,  loss:735,  variant:false, gites:6,  gite_note:"~6 pilgrim gîtes + abbey hospice",                                                                                                    warn:false, warn_msg:"", lat:44.1003, lon:1.0842},
+  {day:1, date:"Apr 15", from:"Le Puy-en-Velay",      to:"Montbonnet",              km:16.7, gain:326,  loss:59,   variant:false, gites:3,  gite_note:"Gîte La 1ère étape · Anne &amp; Didier · Tel: 06 21 47 18 96 · maps.google.com/?q=Montbonnet+Gite+La+Premiere+Etape · Booked: email (Feb 17 2026) · Bed: demi-pension, shared room of 4 · Price: €49/person (bed + dinner + breakfast) · Deposit: none · Call if arriving after 17h.", warn:false, warn_msg:"", booked:true,  lat:45.0017, lon:3.8149},
+  {day:2, date:"Apr 16", from:"Montbonnet",            to:"Saugues",                 km:26.1, gain:970,  loss:913,  variant:false, gites:5,  gite_note:"Gîte Communal Saugues · Tel: 06 65 15 04 32 · maps.google.com/?q=8+Avenue+du+Gevaudan+Saugues · Booked: online campingdelaseuge.fr (Apr 8 2026) · Ref: O20260408MCCRA18414377 · Bed: dorm, bed only (self-catering kitchen) · Price: €16.78 (€15.90 + €0.88 taxe de séjour) · Deposit: paid in full by card (payment P20260408MCCRA136424831).", warn:false, warn_msg:"", booked:true,  lat:44.9622, lon:3.5400},
+  {day:3, date:"Apr 17", from:"Saugues",               to:"Domaine du Sauvage",      km:22.5, gain:608,  loss:272,  variant:false,  gites:1,  gite_note:"Auberge du Sauvage · Tel: 04 71 74 40 30 · maps.google.com/?q=Domaine+du+Sauvage+Saugues+Gevaudan · Booked: online sauvage-en-gevaudan.com (Apr 2026) · Ref: OS-8999873 · Bed: demi-pension, shared room of 5 · Price: €54.88 total · Deposit: €24.88 paid online, €30.00 on arrival · Check-in 16h.", warn:false, warn_msg:"", booked:true,  lat:44.8303, lon:3.4569},
+  {day:4, date:"Apr 18", from:"Domaine du Sauvage",    to:"Aumont-Aubrac",           km:25.1, gain:443,  loss:694,  variant:false,  gites:6,  gite_note:"La Ferme du Barry · Host: Charles · Tel: 06 76 34 17 30 · maps.google.com/?q=Ferme+du+Barry+Aumont-Aubrac · Booked: email fermedubarry@yahoo.fr (Apr 9 2026) · Bed: demi-pension, 5-person dorm · Price: €45/person · Deposit: none.", warn:false, warn_msg:"", booked:true,  lat:44.7230, lon:3.2858},
+  {day:5, date:"Apr 19", from:"Aumont-Aubrac",         to:"Nasbinals",               km:26.1, gain:759,  loss:496,  variant:false,  gites:7,  gite_note:"Gîte NADA · Tel: 06 32 18 43 53 · maps.google.com/?q=NADA+Nasbinals · Booked: email nada.nasbinals@gmail.com (Apr 8 2026) · Bed: shared room of 3 beds, no dinner · Price: €19/person + €3 heating surcharge · Deposit: none · Breakfast donativo. Dinner in village.", warn:false, warn_msg:"", booked:true,  lat:44.6580, lon:2.9929},
+  {day:6, date:"Apr 20", from:"Nasbinals",             to:"Saint-Côme-d'Olt",        km:33.4, gain:582,  loss:1535, variant:false,  gites:4,  gite_note:"D6 Saint-Côme-d'Olt — NO accommodation confirmed. Del Roumiou full. La Casa de Annie (06 37 20 96 76) contacted via WhatsApp Apr 9 — no response. Alternatives: Couvent de Malet (05 65 51 03 20, 60 beds), Gîte Les Templiers, Gîte du Couvent.", warn:false, warn_msg:"", booked:false, lat:44.5036, lon:2.8289},
+  {day:7, date:"Apr 21", from:"Saint-Côme-d'Olt",      to:"Estaing",                 km:20.5, gain:697,  loss:717,  variant:false,  gites:6,  gite_note:"Gîte Communal Estaing · Tel: 06 44 95 52 14 · maps.google.com/?q=10+place+du+Foirail+Estaing+Aveyron · Booked: online gitecommunalestaing.fr (Apr 8 2026) · Ref: O001958 · Bed: dorm, self-catering (no meals) · Price: €17.00 (€16.34 + €0.66 taxe de séjour) · Deposit: €4.90 via Wise (#2068445430) · Balance: €12.10 on arrival · Check-in 15h–18h, call if late.", warn:false, warn_msg:"", booked:true, lat:44.5698, lon:2.6660},
+  {day:8, date:"Apr 22", from:"Estaing",               to:"Conques",                 km:35.7, gain:1165, loss:1193, variant:false, gites:5,  gite_note:"Abbaye Sainte-Foy · Tel: 05 65 69 85 12 · maps.google.com/?q=Abbaye+Sainte-Foy+Conques · Booked: online abbaye-conques.org (Apr 8 2026) · Ref: 461595, payment 2052422 · Bed: dortoir 212, bed only (eating in town) · Price: €14.77 · Deposit: paid in full by card · Check-in 14h–17h45.",  warn:false, warn_msg:"", booked:true,  lat:44.6003, lon:2.3969},
+  {day:9, date:"Apr 23", from:"Conques",               to:"Montredon",               km:37.7, gain:1265, loss:1300, variant:false, gites:4,  gite_note:"Gîte Bien et Toit · Host: Frank · Tel: (WhatsApp) · maps.google.com/?q=Gite+Bien+et+Toit+Montredon+GR65 · Booked: WhatsApp (Apr 8 2026) · Bed: dortoir, demi-pension · Price: €42/person (bed + dinner + breakfast) · Deposit: none · Pool on site. Check-in from 16h.",                                                warn:false, warn_msg:"", booked:true,  lat:44.6095, lon:2.1360},
+  {day:10,date:"Apr 24", from:"Le Terly",              to:"Lacapelle-Marival",       km:22.8, gain:610,  loss:422,  variant:true, gites:3,  gite_note:"Cèdre Bleu FULL (Marie replied Apr 9). No indoor accommodation confirmed. Options: Le Perchoir Rudelle (06 28 07 27 86), La Terrasse hotel (€89), or Camping Bois de Sophie (06 80 59 79 86).",                          warn:false, warn_msg:"", booked:false, lat:44.7289, lon:1.9238},
+  {day:11,date:"Apr 25", from:"Lacapelle-Marival",     to:"Rocamadour",              km:33.9, gain:320,  loss:521,  variant:true, gites:6,  gite_note:"Le Terminus des Pèlerins · Tel: 05 65 33 62 04 · maps.google.com/?q=Le+Terminus+des+Pelerins+Rocamadour · Booked: Booking.com (Apr 9 2026) · Ref: 5325248270 PIN 5423 · Bed: Standard Double Room with Valley View · Price: €95 (~CAD 154 incl. taxes) · Deposit: card guaranteed, free cancel until Apr 22 · Check-in 15h–20h, check-out 10h30.", warn:false, warn_msg:"", booked:true,  lat:44.7991, lon:1.6196},
+  {day:12,date:"Apr 26", from:"Rocamadour",            to:"Labastide-Murat",         km:27.7, gain:740,  loss:551,  variant:true, gites:3,  gite_note:"Le Refuge des Gazelles · Host: Marie · Tel: 06 85 64 62 07 · maps.google.com/?q=6+Route+de+Montfaucon+Labastide-Murat · Booked: email lerefugedesgazelles@gmail.com (Apr 9 2026) · Bed: demi-pension, 3-person room · Price: €43/person · Deposit: €10 via Wise (Apr 9 2026, received confirmed) · Sleeping bag liner — no linen/towel needed. Check-in 16h00, bags in veranda lockers.", warn:false, warn_msg:"", booked:true,  lat:44.6478, lon:1.5663},
+  {day:13,date:"Apr 27", from:"Labastide-Murat",       to:"Vers",                    km:24.0, gain:263,  loss:571,  variant:true, gites:2,  gite_note:"Gîte le Monde Allant Vers · Host: Tony Viot · Tel: (email only) · maps.google.com/?q=Le+Monde+Allant+Vers+Vers+Lot · Booked: email lemondeallantvers46@gmail.com (Apr 8 2026) · Bed: demi-pension, 8-bed mixed dorm · Price: €42/person all-in (bed + dinner + breakfast + tourist tax) + €2 linen + €2 towel · Deposit: none · CASH ONLY — no ATM in Vers, bring cash from Labastide-Murat. Check-in 15h, dinner 19h.", warn:false, warn_msg:"", booked:true,  lat:44.5042, lon:1.5575},
+  {day:14,date:"Apr 28", from:"Vers",                  to:"Lascabannes (via Cahors)", km:33.4, gain:766, loss:614,  variant:false,  gites:2,  gite_note:"La Grange des 2 Vallées — booking request submitted Apr 9 2026 (email to contact@lagrangedes2vallees.fr). Hosts: Emeline &amp; Cyril. Demi-pension, chambre d'hôtes, pool. Awaiting confirmation.", warn:true,  warn_msg:"Booking request sent to contact@lagrangedes2vallees.fr — awaiting confirmation.", booked:false, lat:44.3629, lon:1.3733},
+  {day:15,date:"Apr 29", from:"Lascabannes",           to:"Lauzerte",                km:32.6, gain:783,  loss:857,  variant:false, gites:4,  gite_note:"Gîte Les Figuiers · Hosts: Orla &amp; Jean-Pierre · Tel: 06 85 31 71 31 · maps.google.com/?q=Gite+Les+Figuiers+Lauzerte · Booked: email accueil@lesfiguiers-lauzerte.com (Apr 9 2026) · Bed: demi-pension, dorm bed · Price: €42/person · Deposit: none · Notify promptly of any changes.", warn:false, warn_msg:"", booked:true,  lat:44.2591, lon:1.1367},
+  {day:16,date:"Apr 30", from:"Lauzerte",              to:"Moissac",                 km:28.3, gain:595,  loss:735,  variant:false, gites:6,  gite_note:"~6 pilgrim gîtes + abbey hospice",                                                                                                    warn:false, warn_msg:"", booked:false, lat:44.1003, lon:1.0842},
 ];
 
 // Start point
@@ -370,30 +517,38 @@ L.marker([START.lat, START.lon], {icon: makeIcon('#c8922a', 13)})
   .bindPopup(`<strong>Le Puy-en-Velay</strong><br>Start — Apr 15`);
 
 // Stage end markers
+const fmtNote = (n) => n.replace(/(maps\.google\.com\/\?q=[^\s·]+)/g, '<a href="https://$1" target="_blank" style="color:#1a4a30;text-decoration:underline">📍 Map</a>').replace(/ · /g, '<br>');
 STAGES.forEach(s => {
-  const color = s.warn ? '#c0392b' : s.variant ? '#b07030' : '#3a2a1a';
+  const color = s.booked ? '#2e6b4a' : s.warn ? '#b8860b' : s.variant ? '#b07030' : '#c0392b';
+  const size  = s.booked ? 13 : s.warn ? 13 : 11;
   const t = mt(s.km, s.gain, s.loss);
-  const popup = `<strong>D${s.day}: ${s.to}</strong><br>${s.date}<br>${s.km.toFixed(1)} km · ${fmtT(t)}<br>↑${s.gain}m / ↓${s.loss}m<br><span style="font-size:11px;color:#666">${s.gite_note}</span>${s.warn?`<br><span style="color:#c0392b;font-size:11px">⚠ ${s.warn_msg}</span>`:''}`;
-  L.marker([s.lat, s.lon], {icon: makeIcon(color, s.warn?13:11)})
+  const bookedLine = s.booked ? `<br><span style="color:#2e6b4a;font-size:11px;font-weight:500">✓ Confirmed</span>` : '';
+  const warnLine   = s.warn   ? `<br><span style="color:#b8860b;font-size:11px">⏳ ${s.warn_msg}</span>` : '';
+  const linksHtml  = BOOKING_LINKS[s.day] ? `<hr style="border:none;border-top:1px solid #ddd;margin:6px 0">${BOOKING_LINKS[s.day]}` : '';
+  const popup = `<strong>D${s.day}: ${s.to}</strong><br>${s.date}<br>${s.km.toFixed(1)} km · ${fmtT(t)}<br>↑${s.gain}m / ↓${s.loss}m<br><span style="font-size:11px;color:#666">${s.booked ? fmtNote(s.gite_note) : s.gite_note}</span>${bookedLine}${warnLine}${linksHtml}`;
+  L.marker([s.lat, s.lon], {icon: makeIcon(color, size)})
     .addTo(map)
-    .bindPopup(popup);
+    .bindPopup(popup, {maxWidth:360, maxHeight:320});
 });
 
 // ── TABLE ──────────────────────────────────────────
 const tbody = document.getElementById('tableBody');
 STAGES.forEach(s => {
-  const cls = s.warn?'warn-row':s.variant?'variant-row':'';
+  const cls = s.booked?'booked-row':s.warn?'pending-row':s.variant?'variant-row':'';
   const t = mt(s.km, s.gain, s.loss);
-  const varB  = s.variant?'<span class="badge b-variant">variant</span>':'';
-  const warnB = s.warn   ?'<span class="badge b-warn">book now</span>':'';
-
-  const extra = s.warn?`<div class="warn-banner">${s.warn_msg}</div>`:'';
+  const varB    = s.variant?'<span class="badge b-variant">variant</span>':'';
+  const warnB   = (!s.booked && !s.warn) ?'<span class="badge b-warn">book now</span>':'';
+  const pendingB = (s.warn && !s.booked)  ?'<span class="badge b-pending">⏳ pending</span>':'';
+  const bookedB = s.booked ?'<span class="badge b-booked">✓ booked</span>':'';
+  const warnExtra   = (s.warn && !s.booked) ? `<div class="pending-banner">⏳ ${s.warn_msg}</div>` : '';
+  const bookedExtra = s.booked ? `<div class="booked-banner">✓ ${fmtNote(s.gite_note)}</div>` : '';
+  const linksExtra  = BOOKING_LINKS[s.day] ? `<div class="booking-links-block">${BOOKING_LINKS[s.day]}</div>` : '';
   const tr = document.createElement('tr');
   if(cls) tr.className=cls;
   tr.innerHTML=`
     <td class="num">${s.day}</td>
     <td class="date-cell">${s.date}</td>
-    <td>${s.from} → <strong>${s.to}</strong>${varB}${warnB}${extra}</td>
+    <td>${s.from} → <strong>${s.to}</strong>${varB}${warnB}${pendingB}${bookedB}${bookedExtra}${warnExtra}${linksExtra}</td>
     <td class="r num">${s.km.toFixed(1)}</td>
     <td class="r ele-cell hide-mobile">+${s.gain}m / −${s.loss}m</td>
     <td class="r time-cell">${fmtT(t)}</td>
