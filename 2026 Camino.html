@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GR65 · Le Puy to Moissac · April 2025</title>
+<title>GR65 · Le Puy to Moissac · April 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js">
@@ -327,10 +327,10 @@ canvas{max-width:100%}
     <h1>Le Puy to Moissac<br><em>April 15 – April 30, 2025</em></h1>
     <p class="header-sub">Connor &nbsp;·&nbsp; 16 walking days &nbsp;·&nbsp; Lyon → Bordeaux → Milan</p>
     <div class="stat-row">
-      <div class="stat-pill"><span class="val">447.2</span><span class="lbl">GPS km</span></div>
-      <div class="stat-pill"><span class="val">~9,500</span><span class="lbl">metres ascent</span></div>
+      <div class="stat-pill"><span class="val">446.5</span><span class="lbl">GPS km</span></div>
+      <div class="stat-pill"><span class="val">~10,900</span><span class="lbl">metres ascent</span></div>
       <div class="stat-pill"><span class="val">5.36</span><span class="lbl">base km/h (Strava)</span></div>
-      <div class="stat-pill"><span class="val">2</span><span class="lbl">book-early stops</span></div>
+
     </div>
   </div>
 </header>
@@ -562,7 +562,7 @@ canvas{max-width:100%}
 </div><!-- /panel-tracker -->
 
 <footer class="footer">
-  <strong>GR65 · Le Puy-en-Velay → Moissac · April 2025</strong> &nbsp;·&nbsp; Strava-calibrated pace · Wise Pilgrim accommodation data
+  <strong>GR65 · Le Puy-en-Velay → Moissac · April 2026</strong> &nbsp;·&nbsp; Strava-calibrated pace · Wise Pilgrim accommodation data
 </footer>
 
 <script>
@@ -952,7 +952,7 @@ const TRACKER_DAYS = [
 ];
 
 // ── TRACKER RENDER ────────────────────────────────────
-const TOTAL_KM = 447.2;
+const TOTAL_KM = 446.5;
 const trackerMaps = {};   // day -> Leaflet map instance
 const trackerCharts = {}; // day -> {ele, hr} Chart instances
 
@@ -1325,7 +1325,11 @@ async function exportCard(day) {
       const tileW = Math.min(640, Math.round(mapW / 2));
       const tileH = Math.min(640, Math.round(mapH / 2));
       const lonSpan = bboxE - bboxW;
-      const zoom = Math.min(15, Math.max(9, Math.log2(360 / lonSpan * (tileW / 512))));
+      const latSpanMerc = bboxN - bboxS;
+      // Fit both lon and lat span to tile — use the more constraining axis
+      const zoomByLon = Math.log2(360 / lonSpan * (tileW / 512));
+      const zoomByLat = Math.log2(180 / latSpanMerc * (tileH / 512));
+      const zoom = Math.min(15, Math.max(9, Math.min(zoomByLon, zoomByLat)));
 
       // ── Mapbox token (URL-restricted to connorm-19.github.io) ─
       const MAPBOX_TOKEN = [
