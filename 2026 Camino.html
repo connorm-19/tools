@@ -328,7 +328,7 @@ canvas{max-width:100%}
     <p class="header-sub">Connor &nbsp;·&nbsp; 16 walking days &nbsp;·&nbsp; Lyon → Bordeaux → Milan</p>
     <div class="stat-row">
       <div class="stat-pill"><span class="val">446.5</span><span class="lbl">GPS km</span></div>
-      <div class="stat-pill"><span class="val">~10,900</span><span class="lbl">metres ascent</span></div>
+      <div class="stat-pill"><span class="val">~9,300</span><span class="lbl">metres ascent</span></div>
       <div class="stat-pill"><span class="val">5.36</span><span class="lbl">base km/h (Strava)</span></div>
 
     </div>
@@ -1395,21 +1395,25 @@ async function exportCard(day) {
       ctx.rect(mapX, mapY, mapW, mapH);
       ctx.clip();
 
-      // Project track onto canvas using Web Mercator, anchored to padded bbox centre
+      // Project track onto canvas using Web Mercator
+      // Scale: at zoom z, one full 512px tile covers 360/2^z degrees lon
+      // The @2x tile is tileW*2 px wide, drawn onto mapW canvas px
+      // px-per-degree-lon in canvas space = (tileW*2 / (360/2^zoom)) * (mapW/(tileW*2))
+      //                                   = mapW * 2^zoom / 360
       const mercY = (lat) => Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360));
-      const tileActualW = tileW * 2, tileActualH = tileH * 2; // @2x
-      const scaleToCanvas = mapW / tileActualW;
+      const pxPerDegLon = mapW * Math.pow(2, zoom) / 360;
       const cMercYval = mercY(bboxCLat);
+      const mercScale = pxPerDegLon; // same scale applies to Mercator Y
 
       const toXY = (lat, lon) => {
         const mY = mercY(lat);
         const dLon = lon - bboxCLon;
         const dMercY = mY - cMercYval;
-        const pxX = (dLon / 360) * Math.pow(2, zoom) * 512 * 2;
-        const pxY = -(dMercY / (2 * Math.PI)) * Math.pow(2, zoom) * 512 * 2;
+        const pxX = dLon * pxPerDegLon;
+        const pxY = -(dMercY / (2 * Math.PI)) * Math.pow(2, zoom) * mapW / 360 * (2 * Math.PI);
         return [
-          mapX + mapW / 2 + pxX * scaleToCanvas,
-          mapY + mapH / 2 + pxY * scaleToCanvas
+          mapX + mapW / 2 + pxX,
+          mapY + mapH / 2 + pxY
         ];
       };
 
