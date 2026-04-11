@@ -255,6 +255,62 @@ tbody tr.booked-row:hover{background:rgba(46,107,74,0.07)}
 .footnote a{color:var(--pilgrim);text-decoration:none}
 .footer{background:var(--ink);color:rgba(245,240,232,0.4);text-align:center;padding:24px;font-size:11.5px;margin-top:48px}
 .footer strong{color:rgba(245,240,232,0.7)}
+
+/* ── TAB STRIP ───────────────────────────────────────── */
+.tab-strip{display:flex;background:var(--ink);border-bottom:2px solid rgba(200,146,42,0.25);position:sticky;top:0;z-index:1000}
+.tab-btn{padding:13px 28px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:rgba(245,240,232,0.42);background:transparent;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;transition:color .18s,border-color .18s;white-space:nowrap}
+.tab-btn:hover{color:rgba(245,240,232,0.72)}
+.tab-btn.active{color:var(--gold-light);border-bottom-color:var(--gold)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* ── TRACKER PANEL ───────────────────────────────────── */
+.tracker-main{max-width:1100px;margin:0 auto;padding:36px 24px 60px}
+.trip-progress{background:#fff;border:1px solid var(--border);border-radius:12px;padding:22px 24px;box-shadow:var(--shadow);margin-bottom:24px}
+.progress-label{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.progress-label .lhs{font-family:'Playfair Display',serif;font-size:17px;font-weight:600}
+.progress-label .rhs{font-size:12px;color:var(--ink-faint)}
+.progress-track{height:8px;background:var(--parchment);border-radius:999px;overflow:hidden;margin-bottom:0}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--pilgrim),var(--gold));border-radius:999px;transition:width .6s ease}
+.progress-stats{display:flex;flex-wrap:wrap;border-top:1px solid var(--border);margin-top:14px}
+.pstat{flex:1;min-width:100px;padding:12px 16px;border-right:1px solid var(--border);text-align:center}
+.pstat:last-child{border-right:none}
+.pstat .v{font-family:'Playfair Display',serif;font-size:21px;font-weight:600;color:var(--ink);line-height:1.1}
+.pstat .l{font-size:9.5px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-faint);margin-top:3px}
+.delta-pos{color:#c0392b;font-size:10px}.delta-neg{color:#2e6b4a;font-size:10px}.delta-zero{color:var(--ink-faint);font-size:10px}
+.compare-wrap{background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:24px}
+.compare-wrap table{width:100%;border-collapse:collapse;font-size:12px}
+.compare-wrap thead tr{background:var(--ink)}
+.compare-wrap thead th{padding:10px 12px;text-align:left;font-size:9.5px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,240,232,0.6)}
+.compare-wrap thead th.r{text-align:right}
+.compare-wrap tbody td{padding:9px 12px;color:var(--ink-mid);border-bottom:1px solid var(--border);vertical-align:middle}
+.compare-wrap tbody tr:last-child td{border-bottom:none}
+.compare-wrap tbody tr:hover td{background:var(--parchment)}
+.compare-wrap td.r{text-align:right}
+.day-card{background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.day-card-head{display:flex;align-items:center;gap:14px;padding:16px 20px;cursor:pointer;user-select:none;transition:background .12s}
+.day-card-head:hover{background:var(--parchment)}
+.day-num{font-family:'Playfair Display',serif;font-size:26px;font-weight:600;color:var(--ink-faint);min-width:36px;line-height:1}
+.day-card-meta{flex:1;min-width:0}
+.day-card-route{font-weight:600;font-size:14px;color:var(--ink)}
+.day-card-sub{font-size:11.5px;color:var(--ink-soft);margin-top:1px}
+.day-card-pills{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}
+.dpill{font-size:11px;padding:3px 9px;border-radius:999px;background:var(--parchment);color:var(--ink-mid);white-space:nowrap;border:1px solid var(--border)}
+.dpill.hr-pill{background:rgba(192,57,43,0.07);color:#8b1a14;border-color:rgba(192,57,43,0.15)}
+.day-card-chevron{font-size:11px;color:var(--ink-soft);transition:transform .2s;flex-shrink:0}
+.day-card.open .day-card-chevron{transform:rotate(180deg)}
+.day-card-body{display:none;padding:0 20px 20px;border-top:1px solid var(--border)}
+.day-card.open .day-card-body{display:block}
+.day-body-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+@media(max-width:720px){.day-body-grid{grid-template-columns:1fr}}
+.day-map{height:220px;border-radius:8px;border:1px solid var(--border);overflow:hidden}
+.day-chart-label{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px;margin-top:14px}
+.day-chart-wrap{position:relative;height:130px}
+.export-btn{display:inline-flex;align-items:center;gap:7px;margin-top:14px;padding:8px 16px;background:var(--ink);color:var(--sand);border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:11.5px;font-weight:500;cursor:pointer;transition:background .15s}
+.export-btn:hover{background:#2a1f14}
+.tracker-empty{text-align:center;padding:64px 24px;color:var(--ink-faint)}
+.tracker-empty .icon{font-size:42px;margin-bottom:16px}
+.tracker-empty p{font-size:13.5px;line-height:1.8;max-width:420px;margin:0 auto}
+
 @media(max-width:700px){.header{padding:32px 20px 28px}.main{padding:24px 16px 48px}td,th{padding:8px 8px}.hide-mobile{display:none}
 .tab-strip{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
 .tab-strip button{flex-shrink:0}
@@ -279,6 +335,14 @@ canvas{max-width:100%}
   </div>
 </header>
 
+<!-- TAB STRIP -->
+<nav class="tab-strip">
+  <button class="tab-btn active" onclick="switchTab('planning',this)">Planning</button>
+  <button class="tab-btn" onclick="switchTab('tracker',this)">📍 Live Tracker</button>
+</nav>
+
+<!-- PLANNING PANEL (existing content) -->
+<div id="panel-planning" class="tab-panel active">
 <main class="main">
 
 
@@ -439,6 +503,63 @@ canvas{max-width:100%}
     Stage distances: Days 1–4 and 8–16 from GPX (main GR65) and KML files (Rocamadour variant FR41/FR42). Days 5–7 from <a href="https://ilovewalkinginfrance.com" target="_blank">ilovewalkinginfrance.com</a> guidebook (Feb 2026) — the GPX routes differently to the waymarked GR65 in the Aubrac section. Moving times from pace model calibrated on your Strava data: Camino Francés 2022, TMB 2023, and BC hike streams. No rest or stops included. Gîte data from <a href="https://wisepilgrim.com" target="_blank">Wise Pilgrim</a> &amp; <a href="https://ilovewalkinginfrance.com" target="_blank">ilovewalkinginfrance.com</a>, early 2026. Map: <a href="https://www.openstreetmap.org" target="_blank">OpenStreetMap</a> contributors.
   </div>
 </main>
+</div><!-- /panel-planning -->
+
+<!-- TRACKER PANEL -->
+<div id="panel-tracker" class="tab-panel">
+<div class="tracker-main">
+
+  <!-- Progress bar -->
+  <div class="trip-progress">
+    <div class="progress-label">
+      <span class="lhs">Trip Progress</span>
+      <span class="rhs" id="trk-progress-label">0 of 447.2 km</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="trk-fill" style="width:0%"></div></div>
+    <div class="progress-stats">
+      <div class="pstat"><div class="v" id="trk-days">0</div><div class="l">Days walked</div></div>
+      <div class="pstat"><div class="v" id="trk-today">—</div><div class="l">Today (km)</div></div>
+      <div class="pstat"><div class="v" id="trk-cumul">0</div><div class="l">Total km</div></div>
+      <div class="pstat"><div class="v" id="trk-gain">0</div><div class="l">Total ascent (m)</div></div>
+      <div class="pstat"><div class="v" id="trk-hr">—</div><div class="l">Avg heart rate</div></div>
+    </div>
+  </div>
+
+  <!-- Planned vs Actual comparison -->
+  <div class="compare-wrap" id="trk-compare-wrap" style="display:none">
+    <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;gap:10px">
+      <span style="font-family:'Playfair Display',serif;font-size:15px;font-weight:600">Planned vs. Actual</span>
+      <span style="font-size:11px;color:var(--ink-faint)">GPS data vs. itinerary</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Day</th><th>Stage</th>
+            <th class="r">Planned km</th><th class="r">Actual km</th><th class="r">Δ km</th>
+            <th class="r hide-mobile">Planned time</th><th class="r hide-mobile">Actual time</th><th class="r hide-mobile">Δ time</th>
+            <th class="r hide-mobile">Avg HR</th>
+          </tr>
+        </thead>
+        <tbody id="trk-compare-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Day cards -->
+  <div id="trk-cards"></div>
+
+  <!-- Empty state -->
+  <div class="tracker-empty" id="trk-empty">
+    <div class="icon">🥾</div>
+    <p>No stages recorded yet. Depart Le Puy-en-Velay on April 15 and drop your first GPX file that evening.</p>
+  </div>
+
+  <div class="footnote" id="trk-footnote" style="display:none">
+    GPS data from Apple Watch · Distance via Haversine formula · Elevation gain with 2m noise filter · Moving time excludes pauses below 0.5 km/h · Heart rate from <code>gpxtpx:hr</code> extension · Paris local time (UTC+2)
+  </div>
+</div>
+</div><!-- /panel-tracker -->
 
 <footer class="footer">
   <strong>GR65 · Le Puy-en-Velay → Moissac · April 2025</strong> &nbsp;·&nbsp; Strava-calibrated pace · Wise Pilgrim accommodation data
@@ -795,6 +916,533 @@ function drawEle(s){
   `;
 }
 drawEle(STAGES[0]);
+
+// ── TAB SWITCHING ─────────────────────────────────────
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'tracker') renderTracker();
+}
+
+// ── TRACKER DATA ──────────────────────────────────────
+// Each entry added by Claude after processing a GPX file.
+// Schema: { day, date, from, to, kmActual, gainActual, lossActual,
+//           movingHours, avgHr, maxHr, startTime, endTime,
+//           track: [[lat,lon],...], eleProfile: [m,...], hrProfile: [bpm,...] }
+const TRACKER_DAYS = [
+  // ── DEMO ENTRY (pre-Camino test hike, Apr 10) ──────────────────────────────
+  { day: 0, date: 'Apr 10', from: 'Trailhead', to: 'Summit (Cypress)', isDemo: true,
+    kmActual: 3.24, gainActual: 249, lossActual: 0, movingHours: 1.0782,
+    avgHr: 156, maxHr: 169, startTime: '10:15', endTime: '11:25', tz: 'PDT',
+    track: [[49.37111,-123.09824],[49.37112,-123.09816],[49.37112,-123.09788],[49.37106,-123.09761],[49.37102,-123.09737],[49.37098,-123.09708],[49.37089,-123.0968],[49.37082,-123.09662],[49.37067,-123.09634],[49.37058,-123.09604],[49.37054,-123.09575],[49.37049,-123.0955],[49.37045,-123.09528],[49.37048,-123.0951],[49.37053,-123.0949],[49.37058,-123.09479],[49.37064,-123.09462],[49.37072,-123.09445],[49.37081,-123.09428],[49.37086,-123.09418],[49.37093,-123.09403],[49.37101,-123.09388],[49.37106,-123.09378],[49.37113,-123.09363],[49.37117,-123.09354],[49.37126,-123.09338],[49.37134,-123.09325],[49.37144,-123.09312],[49.37149,-123.093],[49.3715,-123.09291],[49.37151,-123.09279],[49.37151,-123.09275],[49.37151,-123.09264],[49.37152,-123.0925],[49.37154,-123.09245],[49.37156,-123.09236],[49.37172,-123.09238],[49.37171,-123.09214],[49.37176,-123.09209],[49.37191,-123.09217],[49.37185,-123.09199],[49.37187,-123.09196],[49.37201,-123.09191],[49.37196,-123.09178],[49.37194,-123.09167],[49.37194,-123.09161],[49.37194,-123.09153],[49.3719,-123.0914],[49.37189,-123.09135],[49.37182,-123.09118],[49.3718,-123.09097],[49.3718,-123.09097],[49.37181,-123.09095],[49.37193,-123.09085],[49.37197,-123.09079],[49.37199,-123.09075],[49.37204,-123.09062],[49.37209,-123.09053],[49.37214,-123.09041],[49.37217,-123.0903],[49.37216,-123.0902],[49.37211,-123.09005],[49.37211,-123.09006],[49.37212,-123.08991],[49.37211,-123.08982],[49.37208,-123.08975],[49.37202,-123.08967],[49.37197,-123.08956],[49.37186,-123.08948],[49.37173,-123.08942],[49.37165,-123.08936],[49.37158,-123.08929],[49.37156,-123.08916],[49.37155,-123.08915],[49.37155,-123.08902],[49.37151,-123.0889],[49.37152,-123.08888],[49.37157,-123.0888],[49.37157,-123.08877],[49.37166,-123.08864],[49.37154,-123.08851],[49.37144,-123.08844],[49.37149,-123.08842],[49.37153,-123.08841],[49.37167,-123.08834],[49.37179,-123.08833],[49.3719,-123.08827],[49.372,-123.08821],[49.37209,-123.08818],[49.37216,-123.08809],[49.37219,-123.08799],[49.37214,-123.08784],[49.37207,-123.08773],[49.37194,-123.0876],[49.37183,-123.08753],[49.37178,-123.08743],[49.37166,-123.08727],[49.37165,-123.08712],[49.37158,-123.08706],[49.37149,-123.08689],[49.37152,-123.08687],[49.37154,-123.08675],[49.37158,-123.08674],[49.37168,-123.08667],[49.37177,-123.08665],[49.37183,-123.08662],[49.37192,-123.08656],[49.37194,-123.08653],[49.37202,-123.0864],[49.37207,-123.08628],[49.37208,-123.08621],[49.37203,-123.08605],[49.37201,-123.08598],[49.37206,-123.08593],[49.37202,-123.08579],[49.37199,-123.08568],[49.37201,-123.08561],[49.37195,-123.08545],[49.37192,-123.08533],[49.37189,-123.0852],[49.37185,-123.08506],[49.37182,-123.08491],[49.37187,-123.08491],[49.37189,-123.08487],[49.37194,-123.08471],[49.37189,-123.08462],[49.37193,-123.08462],[49.37196,-123.08448],[49.37199,-123.0843],[49.3719,-123.08406],[49.37177,-123.08391],[49.37175,-123.08377],[49.37181,-123.08363],[49.37183,-123.08361],[49.37195,-123.08354],[49.372,-123.08349],[49.37206,-123.08348],[49.37215,-123.08341],[49.3722,-123.08342],[49.37221,-123.08316],[49.37226,-123.08301],[49.37231,-123.08302],[49.37241,-123.08309],[49.37251,-123.08318],[49.37261,-123.0832],[49.37272,-123.08322],[49.37286,-123.08315],[49.37297,-123.08304],[49.37305,-123.08302],[49.3731,-123.083],[49.37319,-123.08297],[49.37329,-123.08293],[49.37339,-123.08289],[49.37344,-123.08276],[49.37341,-123.08262],[49.37337,-123.08248],[49.37336,-123.08248],[49.37343,-123.08249],[49.37354,-123.08245],[49.37362,-123.0824],[49.37365,-123.08222],[49.37372,-123.08217],[49.37386,-123.08202],[49.37391,-123.08192],[49.37398,-123.08182],[49.37404,-123.08171],[49.37416,-123.0816],[49.37427,-123.08161],[49.37437,-123.0816],[49.37448,-123.0816],[49.37462,-123.0816],[49.37474,-123.08158],[49.37486,-123.08155],[49.37493,-123.08153],[49.37499,-123.08146],[49.37505,-123.08136],[49.3751,-123.08141],[49.37523,-123.08146],[49.37537,-123.08132],[49.37541,-123.08128],[49.37553,-123.08132],[49.37566,-123.08133],[49.37572,-123.08134],[49.37586,-123.08137],[49.37596,-123.08142],[49.37605,-123.08146],[49.37618,-123.08153],[49.37628,-123.08159],[49.37645,-123.0817],[49.3766,-123.08177],[49.37672,-123.08178],[49.37685,-123.08176],[49.377,-123.08173],[49.37717,-123.08177],[49.37725,-123.08191],[49.37736,-123.08214],[49.37751,-123.08239],[49.37756,-123.08238],[49.37772,-123.08227],[49.37785,-123.08236],[49.378,-123.0825],[49.37805,-123.08281],[49.3781,-123.08295],[49.3782,-123.08297],[49.37833,-123.08302],[49.3785,-123.08305],[49.37863,-123.08313],[49.3788,-123.08324]],
+    eleProfile: [298,304,315,323,332,338,345,357,365,376,386,393,401,411,422,430,445,449,466,474,479,492,499,510,520,524,537,546,556,568,579,588,596,604,613,620,625,633,642,651,660,669,679,687,694,701,710,718,725,730,740,748,757,764,772,778,789,798,804,815,819,830,838,846,854,858,869,877,886,894,900,907,914,921,928,934,941,947,954,961,968,973,981,988,993,998,1006,1010,1013,1019,1025,1031,1036,1042,1050,1054,1055,1058,1063,1066,1076,1084],
+    hrProfile: [102,127,144,148,146,140,135,150,157,156,154,158,158,152,161,159,160,161,164,160,161,159,160,162,164,166,160,162,162,163,164,165,164,163,158,158,157,156,158,160,161,163,168,164,161,165,158,161,158,158,156,162,159,160,165,166,163,162,161,166,166,163,162,163,160,162,162,163,168,163,164,161,159,156,158,159,156,149,157,159,152,153,151,158,154,152,155,155,143,152,150,151,143,151,152,146,133,131,142,141,151,154],
+  },
+];
+
+// ── TRACKER RENDER ────────────────────────────────────
+const TOTAL_KM = 447.2;
+const trackerMaps = {};   // day -> Leaflet map instance
+const trackerCharts = {}; // day -> {ele, hr} Chart instances
+
+function fmtDelta(val, unit, higherIsBad) {
+  if (Math.abs(val) < 0.05) return `<span class="delta-zero">±0${unit}</span>`;
+  const cls = (higherIsBad ? val > 0 : val < 0) ? 'delta-pos' : 'delta-neg';
+  const sign = val > 0 ? '+' : '';
+  return `<span class="${cls}">${sign}${val}${unit}</span>`;
+}
+
+function renderTracker() {
+  const days = TRACKER_DAYS;
+  const empty = document.getElementById('trk-empty');
+  const footnote = document.getElementById('trk-footnote');
+  const compareWrap = document.getElementById('trk-compare-wrap');
+
+  if (days.length === 0) {
+    empty.style.display = 'block';
+    compareWrap.style.display = 'none';
+    footnote.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  footnote.style.display = 'block';
+  compareWrap.style.display = 'block';
+
+  // Aggregate stats
+  const realDays = days.filter(d => !d.isDemo);
+  const cumKm    = realDays.reduce((s,d) => s + d.kmActual, 0);
+  const cumGain  = realDays.reduce((s,d) => s + d.gainActual, 0);
+  const allHr    = realDays.filter(d => d.avgHr).map(d => d.avgHr);
+  const avgHr    = allHr.length ? Math.round(allHr.reduce((a,b)=>a+b,0)/allHr.length) : null;
+  const last     = realDays.length ? realDays[realDays.length-1] : days[days.length-1];
+  const pct      = Math.min(100, (cumKm / TOTAL_KM) * 100);
+
+  document.getElementById('trk-fill').style.width = pct.toFixed(1) + '%';
+  document.getElementById('trk-progress-label').textContent = `${cumKm.toFixed(1)} of ${TOTAL_KM} km · ${pct.toFixed(1)}%`;
+  document.getElementById('trk-days').textContent = realDays.length;
+  document.getElementById('trk-today').textContent = realDays.length ? last.kmActual.toFixed(1) : '—';
+  document.getElementById('trk-cumul').textContent = cumKm.toFixed(1);
+  document.getElementById('trk-gain').textContent = Math.round(cumGain).toLocaleString();
+  document.getElementById('trk-hr').textContent = avgHr ? avgHr + ' bpm' : '—';
+
+  compareWrap.style.display = realDays.length ? 'block' : 'none';
+
+  // Comparison table
+  const tbody = document.getElementById('trk-compare-body');
+  tbody.innerHTML = '';
+  days.forEach(d => {
+    if (d.isDemo) return;
+    const planned = STAGES.find(s => s.day === d.day);
+    if (!planned) return;
+    const plannedTime = mt(planned.km, planned.gain, planned.loss);
+    const deltaKm   = (d.kmActual - planned.km).toFixed(1);
+    const deltaH    = (d.movingHours - plannedTime);
+    const deltaMin  = Math.round(deltaH * 60);
+    const deltaTimeStr = fmtDelta(deltaMin, 'min', true);
+    const deltaKmStr   = fmtDelta(parseFloat(deltaKm), 'km', true);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:var(--ink)">${d.day}</td>
+      <td>${d.from} → <strong>${d.to}</strong></td>
+      <td class="r">${planned.km.toFixed(1)}</td>
+      <td class="r" style="font-weight:600">${d.kmActual.toFixed(1)}</td>
+      <td class="r">${deltaKmStr}</td>
+      <td class="r hide-mobile">${fmtT(plannedTime)}</td>
+      <td class="r hide-mobile" style="font-weight:600">${fmtT(d.movingHours)}</td>
+      <td class="r hide-mobile">${deltaTimeStr}</td>
+      <td class="r hide-mobile">${d.avgHr ? d.avgHr + ' bpm' : '—'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Day cards
+  const cardsEl = document.getElementById('trk-cards');
+  // Only rebuild cards not yet rendered
+  days.forEach(d => {
+    const existing = document.getElementById(`tcard-${d.day}`);
+    if (existing) return;
+    const planned = d.isDemo ? null : STAGES.find(s => s.day === d.day);
+    const plannedKm   = planned ? planned.km.toFixed(1) : '—';
+    const plannedTime = planned ? fmtT(mt(planned.km, planned.gain, planned.loss)) : '—';
+    const deltaKm  = planned ? ((d.kmActual - planned.km) > 0 ? '+' : '') + (d.kmActual - planned.km).toFixed(1) + ' km' : '';
+    const dayLabel = d.isDemo ? 'Demo' : String(d.day);
+
+    const card = document.createElement('div');
+    card.className = 'day-card';
+    card.id = `tcard-${d.day}`;
+    card.innerHTML = `
+      <div class="day-card-head" onclick="toggleCard(${d.day})">
+        <div class="day-num">${dayLabel}</div>
+        <div class="day-card-meta">
+          <div class="day-card-route">${d.from} → ${d.to}${d.isDemo ? ' &nbsp;<span style="font-size:10px;font-weight:500;padding:2px 7px;border-radius:999px;background:rgba(122,79,42,0.12);color:var(--pilgrim);font-family:DM Sans,sans-serif">demo</span>' : ''}</div>
+          <div class="day-card-sub">${d.date} &nbsp;·&nbsp; ${d.startTime}–${d.endTime}${d.tz ? ' <span style="font-size:10px;color:var(--ink-faint)">'+d.tz+'</span>' : ''}</div>
+          <div class="day-card-pills">
+            <span class="dpill">📍 ${d.kmActual.toFixed(1)} km</span>
+            <span class="dpill">↑ ${Math.round(d.gainActual)}m &nbsp;↓ ${Math.round(d.lossActual)}m</span>
+            <span class="dpill">⏱ ${fmtT(d.movingHours)}</span>
+            ${d.avgHr ? `<span class="dpill hr-pill">♥ ${d.avgHr} avg · ${d.maxHr} max bpm</span>` : ''}
+            ${planned ? `<span class="dpill" style="color:var(--ink-faint)">Plan: ${plannedKm} km · ${plannedTime}</span>` : ''}
+          </div>
+        </div>
+        <div class="day-card-chevron">▼</div>
+      </div>
+      <div class="day-card-body">
+        <div class="day-body-grid">
+          <div>
+            <div class="day-chart-label">GPS Track</div>
+            <div class="day-map" id="dmap-${d.day}"></div>
+          </div>
+          <div>
+            <div class="day-chart-label">Elevation (m)</div>
+            <div class="day-chart-wrap"><canvas id="dele-${d.day}"></canvas></div>
+            ${d.hrProfile && d.hrProfile.length ? `
+            <div class="day-chart-label">Heart Rate (bpm)</div>
+            <div class="day-chart-wrap"><canvas id="dhr-${d.day}"></canvas></div>` : ''}
+          </div>
+        </div>
+        <button class="export-btn" onclick="exportCard(${d.day})">⬇ Save Story Card</button>
+      </div>
+    `;
+    cardsEl.appendChild(card);
+  });
+}
+
+function toggleCard(day) {
+  const card = document.getElementById(`tcard-${day}`);
+  const wasOpen = card.classList.contains('open');
+  card.classList.toggle('open');
+  if (!wasOpen) initCardVisuals(day);
+}
+
+function initCardVisuals(day) {
+  const d = TRACKER_DAYS.find(x => x.day === day);
+  if (!d) return;
+
+  // Leaflet map
+  if (!trackerMaps[day]) {
+    const mapEl = document.getElementById(`dmap-${day}`);
+    const lats = d.track.map(p=>p[0]), lons = d.track.map(p=>p[1]);
+    const clat = (Math.min(...lats)+Math.max(...lats))/2;
+    const clon = (Math.min(...lons)+Math.max(...lons))/2;
+    const m = L.map(mapEl, {scrollWheelZoom:false, zoomControl:true});
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:18, attribution:'© OpenStreetMap'}).addTo(m);
+    const poly = L.polyline(d.track, {color:'#c8922a', weight:3.5, opacity:0.9}).addTo(m);
+    m.fitBounds(poly.getBounds(), {padding:[16,16]});
+    // Start/end markers
+    const startIcon = L.divIcon({className:'',html:'<div style="width:10px;height:10px;background:#2e6b4a;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.35)"></div>',iconSize:[10,10],iconAnchor:[5,5]});
+    const endIcon   = L.divIcon({className:'',html:'<div style="width:10px;height:10px;background:#c0392b;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.35)"></div>',iconSize:[10,10],iconAnchor:[5,5]});
+    L.marker(d.track[0], {icon:startIcon}).addTo(m).bindPopup(`<strong>Start</strong><br>${d.from}`);
+    L.marker(d.track[d.track.length-1], {icon:endIcon}).addTo(m).bindPopup(`<strong>End</strong><br>${d.to}`);
+    trackerMaps[day] = m;
+    setTimeout(()=>m.invalidateSize(), 50);
+  }
+
+  // Elevation chart
+  if (!trackerCharts[day]) {
+    trackerCharts[day] = {};
+    const eleCtx = document.getElementById(`dele-${day}`);
+    if (eleCtx && d.eleProfile) {
+      trackerCharts[day].ele = new Chart(eleCtx, {
+        type:'line',
+        data:{
+          labels: d.eleProfile.map((_,i)=>i),
+          datasets:[{data:d.eleProfile,borderColor:'#7a4f2a',backgroundColor:'rgba(122,79,42,0.09)',borderWidth:2,pointRadius:0,fill:true,tension:0.3}]
+        },
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.raw}m`}}},
+          scales:{x:{display:false},y:{grid:{color:'rgba(90,70,50,0.08)'},ticks:{font:{size:10},color:'#8b7060',callback:v=>v+'m'}}}}
+      });
+    }
+    // HR chart
+    const hrCtx = document.getElementById(`dhr-${day}`);
+    if (hrCtx && d.hrProfile && d.hrProfile.length) {
+      trackerCharts[day].hr = new Chart(hrCtx, {
+        type:'line',
+        data:{
+          labels: d.hrProfile.map((_,i)=>i),
+          datasets:[{data:d.hrProfile,borderColor:'#c0392b',backgroundColor:'rgba(192,57,43,0.07)',borderWidth:2,pointRadius:0,fill:true,tension:0.3}]
+        },
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.raw} bpm`}}},
+          scales:{x:{display:false},y:{grid:{color:'rgba(90,70,50,0.06)'},ticks:{font:{size:10},color:'#8b7060',callback:v=>v+' bpm'}}}}
+      });
+    }
+  }
+}
+
+// ── STORY CARD EXPORT ─────────────────────────────────
+async function exportCard(day) {
+  const d = TRACKER_DAYS.find(x => x.day === day);
+  const planned = STAGES.find(s => s.day === day);
+  if (!d) return;
+
+  const W = 1080, H = 1920;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#1a1410';
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle texture overlay
+  for (let i = 0; i < 8000; i++) {
+    ctx.fillStyle = `rgba(200,146,42,${Math.random()*0.015})`;
+    ctx.fillRect(Math.random()*W, Math.random()*H, 1, 1);
+  }
+
+  // Top gold accent bar
+  const grd = ctx.createLinearGradient(0,0,W,0);
+  grd.addColorStop(0,'#7a4f2a'); grd.addColorStop(0.5,'#c8922a'); grd.addColorStop(1,'#7a4f2a');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, W, 4);
+
+  // ── LAYOUT CONSTANTS ─────────────────────────────────
+  const PAD = 80;
+  const INNER = W - PAD * 2;
+
+  // ── EYEBROW ───────────────────────────────────────────
+  ctx.fillStyle = 'rgba(232,200,122,0.6)';
+  ctx.font = '500 28px DM Sans, sans-serif';
+  ctx.letterSpacing = '0.18em';
+  ctx.fillText('VIA PODIENSIS  ·  GR65', PAD, 82);
+
+  // ── DAY NUMBER (watermark) ────────────────────────────
+  ctx.fillStyle = 'rgba(245,240,232,0.07)';
+  ctx.font = '600 280px Playfair Display, serif';
+  ctx.textAlign = 'right';
+  ctx.fillText(`${d.isDemo ? '~' : day}`, W - 60, 360);
+  ctx.textAlign = 'left';
+
+  // ── FROM / ARROW / TO ────────────────────────────────
+  ctx.fillStyle = 'rgba(245,240,232,0.55)';
+  ctx.font = '400 46px Playfair Display, serif';
+  ctx.fillText(d.from, PAD, 310);
+  ctx.fillStyle = '#c8922a';
+  ctx.font = '300 34px DM Sans, sans-serif';
+  ctx.fillText('↓', PAD + 4, 364);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '600 72px Playfair Display, serif';
+  ctx.fillText(d.to, PAD, 460);
+
+  // ── DATE / TIME ───────────────────────────────────────
+  ctx.fillStyle = 'rgba(245,240,232,0.38)';
+  ctx.font = '400 28px DM Sans, sans-serif';
+  ctx.fillText(`${d.date}   ${d.startTime} – ${d.endTime}${d.tz ? '  ' + d.tz : ''}`, PAD, 510);
+
+  // ── DIVIDER ───────────────────────────────────────────
+  const divY = 548;
+  const divGrd = ctx.createLinearGradient(PAD, 0, PAD + INNER, 0);
+  divGrd.addColorStop(0, 'rgba(200,146,42,0.6)');
+  divGrd.addColorStop(1, 'rgba(200,146,42,0.05)');
+  ctx.strokeStyle = divGrd; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(PAD, divY); ctx.lineTo(PAD + INNER, divY); ctx.stroke();
+
+  // ── STATS  2×2 grid ──────────────────────────────────
+  const stats4 = [
+    {v: d.kmActual.toFixed(1) + ' km',   l: 'distance'},
+    {v: '↑ ' + Math.round(d.gainActual) + ' m', l: 'elevation gain'},
+    {v: fmtT(d.movingHours),              l: 'moving time'},
+    {v: d.avgHr ? d.avgHr + ' bpm' : '—', l: 'avg heart rate'},
+  ];
+  const sColW = INNER / 2;
+  const sRows = [[stats4[0], stats4[1]], [stats4[2], stats4[3]]];
+  const sStartY = 580;
+  const sRowH = 140;
+  sRows.forEach((row, ri) => {
+    row.forEach((s, ci) => {
+      const sx = PAD + ci * sColW + sColW / 2;
+      const sy = sStartY + ri * sRowH;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#c8922a';
+      ctx.font = '600 52px Playfair Display, serif';
+      ctx.fillText(s.v, sx, sy + 52);
+      ctx.fillStyle = 'rgba(245,240,232,0.4)';
+      ctx.font = '400 22px DM Sans, sans-serif';
+      ctx.fillText(s.l, sx, sy + 84);
+    });
+  });
+  // Optional vs-planned badge
+  if (planned) {
+    const deltaKm = (d.kmActual - planned.km);
+    const dStr = (deltaKm > 0 ? '+' : '') + deltaKm.toFixed(1) + ' km vs plan';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = deltaKm > 1 ? '#c0392b' : deltaKm < -1 ? '#2e6b4a' : 'rgba(245,240,232,0.3)';
+    ctx.font = '500 24px DM Sans, sans-serif';
+    ctx.fillText(dStr, W / 2, sStartY + sRows.length * sRowH + 10);
+  }
+  ctx.textAlign = 'left';
+
+  // ── SECTION DIVIDER ───────────────────────────────────
+  const eleLabelY = sStartY + sRows.length * sRowH + (planned ? 54 : 36);
+
+  // ── ELEVATION PROFILE ─────────────────────────────────
+  if (d.eleProfile && d.eleProfile.length) {
+    const ep = d.eleProfile;
+    const minE = Math.min(...ep), maxE = Math.max(...ep);
+    const chartX = PAD, chartY = eleLabelY + 30;
+    const chartW = INNER, chartH = 200;
+
+    // Section label
+    ctx.fillStyle = 'rgba(245,240,232,0.22)';
+    ctx.font = '500 22px DM Sans, sans-serif';
+    ctx.letterSpacing = '0.12em';
+    ctx.fillText('ELEVATION', chartX, eleLabelY);
+    ctx.letterSpacing = '0';
+
+    // Gradient fill
+    ctx.beginPath();
+    ep.forEach((e, i) => {
+      const px = chartX + (i / (ep.length - 1)) * chartW;
+      const py = chartY + chartH - ((e - minE) / (maxE - minE || 1)) * chartH;
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    });
+    ctx.lineTo(chartX + chartW, chartY + chartH);
+    ctx.lineTo(chartX, chartY + chartH);
+    ctx.closePath();
+    const eGrd = ctx.createLinearGradient(0, chartY, 0, chartY + chartH);
+    eGrd.addColorStop(0, 'rgba(200,146,42,0.45)');
+    eGrd.addColorStop(1, 'rgba(200,146,42,0.03)');
+    ctx.fillStyle = eGrd; ctx.fill();
+
+    // Line
+    ctx.beginPath();
+    ep.forEach((e, i) => {
+      const px = chartX + (i / (ep.length - 1)) * chartW;
+      const py = chartY + chartH - ((e - minE) / (maxE - minE || 1)) * chartH;
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    });
+    ctx.strokeStyle = '#c8922a'; ctx.lineWidth = 2.5; ctx.stroke();
+
+    // Min / max labels
+    ctx.fillStyle = 'rgba(245,240,232,0.3)';
+    ctx.font = '400 20px DM Sans, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(minE + 'm', chartX, chartY + chartH + 26);
+    ctx.textAlign = 'right';
+    ctx.fillText(maxE + 'm', chartX + chartW, chartY + chartH + 26);
+    ctx.textAlign = 'left';
+
+    // ── GPS MAP via Mapbox Static Images ─────────────────
+    if (d.track && d.track.length > 1) {
+      const mapX = PAD, mapY = chartY + chartH + 56;
+      const mapW = INNER, mapH = H - mapY - 90;
+
+      // Map label
+      ctx.fillStyle = 'rgba(245,240,232,0.22)';
+      ctx.font = '500 22px DM Sans, sans-serif';
+      ctx.letterSpacing = '0.12em';
+      ctx.fillText('GPS TRACK', mapX, mapY - 14);
+      ctx.letterSpacing = '0';
+
+      // Compute bounding box with padding so start/end towns are visible
+      const lats = d.track.map(p => p[0]), lons = d.track.map(p => p[1]);
+      const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+      const minLon = Math.min(...lons), maxLon = Math.max(...lons);
+      const cLat = (minLat + maxLat) / 2;
+      const cLon = (minLon + maxLon) / 2;
+
+      // Pad bounding box by 30% on each side so surrounding towns are included
+      const latPad = (maxLat - minLat) * 0.35 || 0.008;
+      const lonPad = (maxLon - minLon) * 0.35 || 0.008;
+      const bboxW = minLon - lonPad, bboxS = minLat - latPad;
+      const bboxE = maxLon + lonPad, bboxN = maxLat + latPad;
+      const bbox = `[${bboxW.toFixed(5)},${bboxS.toFixed(5)},${bboxE.toFixed(5)},${bboxN.toFixed(5)}]`;
+
+      // Mapbox Static Images — bbox/auto mode, outdoors style @2x
+      // Max tile size is 1280px; request at half canvas size, draw stretched
+      const MAPBOX_TOKEN = 'pk.eyJ1IjoiY29ubm9ybS0xOSIsImEiOiJjbW51d2RrM3UxM2xqMnFxM2Q5NmV3dTdzIn0.WSQo3w6uTIOnC7yOZg-atQ';
+      const tileW = Math.min(640, Math.round(mapW / 2));
+      const tileH = Math.min(640, Math.round(mapH / 2));
+      const mapUrl = `https://api.mapbox.com/styles/v1/mapbox/outdoors-v12/static/${bbox}/auto/${tileW}x${tileH}@2x?padding=20&access_token=${MAPBOX_TOKEN}`;
+
+      // Derive zoom from bbox span for Web Mercator overlay projection
+      // At zoom z, tile covers 360/2^z degrees longitude at 512px
+      const lonSpan = bboxE - bboxW;
+      const zoom = Math.log2(360 / lonSpan * (tileW / 512));
+
+      try {
+        const mapImg = await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => resolve(img);
+          img.onerror = () => reject(new Error('Mapbox tile load failed'));
+          img.src = mapUrl;
+        });
+
+        // Draw tile stretched to fill map panel
+        ctx.drawImage(mapImg, mapX, mapY, mapW, mapH);
+
+        // Slight dark vignette overlay so gold track pops
+        const vig = ctx.createRadialGradient(
+          mapX + mapW/2, mapY + mapH/2, mapH * 0.2,
+          mapX + mapW/2, mapY + mapH/2, mapH * 0.75
+        );
+        vig.addColorStop(0, 'rgba(0,0,0,0)');
+        vig.addColorStop(1, 'rgba(0,0,0,0.35)');
+        ctx.fillStyle = vig;
+        ctx.fillRect(mapX, mapY, mapW, mapH);
+
+      } catch (e) {
+        // Fallback: dark panel with grid if tile fails
+        ctx.fillStyle = 'rgba(42,32,20,0.9)';
+        ctx.fillRect(mapX, mapY, mapW, mapH);
+        const gridCols = 8, gridRows = 6;
+        ctx.strokeStyle = 'rgba(200,146,42,0.07)'; ctx.lineWidth = 1;
+        for (let gi = 1; gi < gridCols; gi++) {
+          const gx = mapX + (gi / gridCols) * mapW;
+          ctx.beginPath(); ctx.moveTo(gx, mapY); ctx.lineTo(gx, mapY + mapH); ctx.stroke();
+        }
+        for (let gi = 1; gi < gridRows; gi++) {
+          const gy = mapY + (gi / gridRows) * mapH;
+          ctx.beginPath(); ctx.moveTo(mapX, gy); ctx.lineTo(mapX + mapW, gy); ctx.stroke();
+        }
+        ctx.fillStyle = 'rgba(245,240,232,0.2)';
+        ctx.font = '400 22px DM Sans, sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('Map unavailable offline', mapX + mapW / 2, mapY + mapH / 2);
+        ctx.textAlign = 'left';
+      }
+
+      // Border on top of tile
+      ctx.strokeStyle = 'rgba(200,146,42,0.3)'; ctx.lineWidth = 1.5;
+      ctx.strokeRect(mapX, mapY, mapW, mapH);
+
+      // Project track onto canvas using Web Mercator, anchored to padded bbox centre
+      const mercY = (lat) => Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360));
+      const tileActualW = tileW * 2, tileActualH = tileH * 2; // @2x
+      const scaleToCanvas = mapW / tileActualW;
+      const bboxCLon = (bboxW + bboxE) / 2;
+      const bboxCLat = (bboxN + bboxS) / 2;
+      const cMercYval = mercY(bboxCLat);
+
+      const toXY = (lat, lon) => {
+        const mY = mercY(lat);
+        const dLon = lon - bboxCLon;
+        const dMercY = mY - cMercYval;
+        const pxX = (dLon / 360) * Math.pow(2, zoom) * 512;
+        const pxY = -(dMercY / (2 * Math.PI)) * Math.pow(2, zoom) * 512;
+        return [
+          mapX + mapW / 2 + pxX * scaleToCanvas,
+          mapY + mapH / 2 + pxY * scaleToCanvas
+        ];
+      };
+
+      // Track shadow
+      ctx.beginPath();
+      d.track.forEach((p, i) => {
+        const [x, y] = toXY(p[0], p[1]);
+        i === 0 ? ctx.moveTo(x + 2, y + 2) : ctx.lineTo(x + 2, y + 2);
+      });
+      ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 7; ctx.lineJoin = 'round'; ctx.stroke();
+
+      // Track line
+      ctx.beginPath();
+      d.track.forEach((p, i) => {
+        const [x, y] = toXY(p[0], p[1]);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.strokeStyle = '#c8922a'; ctx.lineWidth = 4.5; ctx.lineJoin = 'round'; ctx.stroke();
+
+      // Start dot (green)
+      const [sx, sy] = toXY(d.track[0][0], d.track[0][1]);
+      ctx.beginPath(); ctx.arc(sx, sy, 10, 0, Math.PI * 2);
+      ctx.fillStyle = '#2e6b4a'; ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; ctx.stroke();
+
+      // End dot (red)
+      const lastPt = d.track[d.track.length - 1];
+      const [ex, ey] = toXY(lastPt[0], lastPt[1]);
+      ctx.beginPath(); ctx.arc(ex, ey, 10, 0, Math.PI * 2);
+      ctx.fillStyle = '#c0392b'; ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; ctx.stroke();
+
+      // Start / end labels with subtle backing
+      [[sx, sy, d.from], [ex, ey, d.to]].forEach(([lx, ly, label]) => {
+        const lw = ctx.measureText(label).width + 16;
+        ctx.fillStyle = 'rgba(20,15,10,0.65)';
+        ctx.fillRect(lx + 14, ly - 16, lw, 24);
+        ctx.fillStyle = 'rgba(245,240,232,0.85)';
+        ctx.font = '500 18px DM Sans, sans-serif';
+        ctx.fillText(label, lx + 22, ly + 2);
+      });
+    }
+  }
+
+  // ── BOTTOM BRANDING ───────────────────────────────────
+  ctx.fillStyle = 'rgba(200,146,42,0.5)';
+  ctx.fillRect(0, H - 4, W, 4);
+  ctx.fillStyle = 'rgba(245,240,232,0.18)';
+  ctx.font = '400 24px DM Sans, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Le Puy-en-Velay → Moissac · April 2026', W / 2, H - 36);
+  ctx.textAlign = 'left';
+
+  // Download
+  const link = document.createElement('a');
+  link.download = `camino-day-${day}-${d.to.replace(/\s+/g,'-').toLowerCase()}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
 </script>
 </body>
 </html>
