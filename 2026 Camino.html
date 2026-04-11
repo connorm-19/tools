@@ -1328,7 +1328,7 @@ async function exportCard(day) {
       const latSpanMerc = bboxN - bboxS;
       // Fit both lon and lat span to tile — use the more constraining axis
       const zoomByLon = Math.log2(360 / lonSpan * (tileW / 512));
-      const zoomByLat = Math.log2(180 / latSpanMerc * (tileH / 512));
+      const zoomByLat = Math.log2(360 / latSpanMerc * (tileH / 512));
       const zoom = Math.min(15, Math.max(9, Math.min(zoomByLon, zoomByLat)));
 
       // ── Mapbox token (URL-restricted to connorm-19.github.io) ─
