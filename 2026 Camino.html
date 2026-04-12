@@ -1404,23 +1404,26 @@ async function exportCard(day) {
       ctx.rect(mapX, mapY, mapW, mapH);
       ctx.clip();
 
-      // Project track onto canvas using Web Mercator.
-      // The @2x tile has pixel dims tileW*2 x tileH*2, drawn onto mapW x mapH canvas px.
-      // Use separate X and Y scale factors to handle non-square tiles correctly.
-      const mercY = (lat) => Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360));
-      const cMercYval = mercY(bboxCLat);
+      // Project track onto canvas using standard Web Mercator (matches Mapbox exactly).
+      // At zoom z the full world is 512*2^z px square.
+      // toWorldPx converts lat/lon to absolute world pixels.
+      // We subtract the centre world pixel, then scale to canvas.
+      const worldSize = 512 * Math.pow(2, zoom);
+      const toWorldPx = (lat, lon) => {
+        const wx = (lon + 180) / 360 * worldSize;
+        const sinLat = Math.sin(lat * Math.PI / 180);
+        const wy = (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI)) * worldSize;
+        return [wx, wy];
+      };
+      const [cWx, cWy] = toWorldPx(bboxCLat, bboxCLon);
       const scaleX = mapW / (tileW * 2);
       const scaleY = mapH / (tileH * 2);
 
       const toXY = (lat, lon) => {
-        const mY = mercY(lat);
-        const dLon = lon - bboxCLon;
-        const dMercY = mY - cMercYval;
-        const tilePxX = (dLon / 360) * Math.pow(2, zoom) * 512 * 2;
-        const tilePxY = -(dMercY / (2 * Math.PI)) * Math.pow(2, zoom) * 512 * 2;
+        const [wx, wy] = toWorldPx(lat, lon);
         return [
-          mapX + mapW / 2 + tilePxX * scaleX,
-          mapY + mapH / 2 + tilePxY * scaleY
+          mapX + mapW / 2 + (wx - cWx) * scaleX,
+          mapY + mapH / 2 + (wy - cWy) * scaleY
         ];
       };
 
