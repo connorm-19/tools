@@ -1330,7 +1330,8 @@ async function exportCard(day) {
 
       // Derive zoom: at zoom z, 512px covers 360/2^z degrees lon — fit padded span to tile
       const tileW = Math.min(640, Math.round(mapW / 2));
-      const tileH = tileW; // square tile request
+      // tileH matches canvas aspect ratio so tile fills canvas without distortion
+      const tileH = Math.round(tileW * mapH / mapW);
       const lonSpan = bboxE - bboxW;
       // Exact Mercator Y span using sinLat formula (zoom-independent)
       const sinLatFactor = (lat) => {
@@ -1338,10 +1339,10 @@ async function exportCard(day) {
         return 0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI);
       };
       const sinDiff = sinLatFactor(bboxS) - sinLatFactor(bboxN); // positive
-      // zoomByLon: fit lon span to tile width
+      // zoomByLon: fit lonSpan to tileW world-px
       const zoomByLon = Math.log2(360 / lonSpan * (tileW / 512));
-      // zoomByLat: fit lat span to canvas height (uniform scale = mapW/tileW)
-      const zoomByLat = Math.log2(mapH * tileW / (512 * mapW * sinDiff));
+      // zoomByLat: fit latSpan to tileH world-px (tileH matches canvas aspect ratio)
+      const zoomByLat = Math.log2(tileH / (sinDiff * 512));
       const zoom = Math.min(15, Math.max(9, Math.min(zoomByLon, zoomByLat)));
 
       // ── Mapbox token (URL-restricted to connorm-19.github.io) ─
@@ -1409,7 +1410,7 @@ async function exportCard(day) {
       ctx.clip();
 
       // Project track using standard Web Mercator matching Mapbox exactly.
-      // Single uniform scale: tileW world-px maps to mapW canvas-px.
+      // tileH = tileW * mapH/mapW so scaleX === scaleY -- uniform, no distortion.
       const worldSize = 512 * Math.pow(2, zoom);
       const toWorldPx = (lat, lon) => {
         const wx = (lon + 180) / 360 * worldSize;
@@ -1418,7 +1419,7 @@ async function exportCard(day) {
         return [wx, wy];
       };
       const [cWx, cWy] = toWorldPx(bboxCLat, bboxCLon);
-      const scale = mapW / tileW; // uniform: 1 world-px = scale canvas-px
+      const scale = mapW / (tileW * 2);
 
       const toXY = (lat, lon) => {
         const [wx, wy] = toWorldPx(lat, lon);
