@@ -1312,8 +1312,14 @@ async function exportCard(day) {
       const cLon = (minLon + maxLon) / 2;
 
       // Pad bounding box by 30% on each side so surrounding towns are included
-      const latPad = (maxLat - minLat) * 0.15 || 0.004;
-      const lonPad = (maxLon - minLon) * 0.15 || 0.004;
+      const latSpanRaw = maxLat - minLat;
+      const lonSpanRaw = maxLon - minLon;
+      // Use more padding on the constraining axis so the track never touches the tile edge
+      const aspectRatio = latSpanRaw / (lonSpanRaw || 0.001);
+      const latPadPct = aspectRatio > 2 ? 0.30 : 0.15;
+      const lonPadPct = aspectRatio < 0.5 ? 0.30 : 0.15;
+      const latPad = latSpanRaw * latPadPct || 0.006;
+      const lonPad = lonSpanRaw * lonPadPct || 0.006;
       const bboxW = minLon - lonPad, bboxS = minLat - latPad;
       const bboxE = maxLon + lonPad, bboxN = maxLat + latPad;
 
