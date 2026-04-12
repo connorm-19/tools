@@ -1312,14 +1312,8 @@ async function exportCard(day) {
       const cLon = (minLon + maxLon) / 2;
 
       // Pad bounding box by 30% on each side so surrounding towns are included
-      const latSpanRaw = maxLat - minLat;
-      const lonSpanRaw = maxLon - minLon;
-      // Use more padding on the constraining axis so the track never touches the tile edge
-      const aspectRatio = latSpanRaw / (lonSpanRaw || 0.001);
-      const latPadPct = aspectRatio > 2 ? 0.30 : 0.15;
-      const lonPadPct = aspectRatio < 0.5 ? 0.30 : 0.15;
-      const latPad = latSpanRaw * latPadPct || 0.006;
-      const lonPad = lonSpanRaw * lonPadPct || 0.006;
+      const latPad = (maxLat - minLat) * 0.15 || 0.004;
+      const lonPad = (maxLon - minLon) * 0.15 || 0.004;
       const bboxW = minLon - lonPad, bboxS = minLat - latPad;
       const bboxE = maxLon + lonPad, bboxN = maxLat + latPad;
 
@@ -1329,7 +1323,9 @@ async function exportCard(day) {
 
       // Derive zoom: at zoom z, 512px covers 360/2^z degrees lon — fit padded span to tile
       const tileW = Math.min(640, Math.round(mapW / 2));
-      const tileH = Math.min(640, Math.round(mapH / 2));
+      // Make tile height proportional to track aspect ratio so tall tracks fill the tile
+      const trackAspect = (maxLat - minLat) / ((maxLon - minLon) || 0.001);
+      const tileH = Math.min(640, Math.round(tileW * Math.min(trackAspect, 3)));
       const lonSpan = bboxE - bboxW;
       const latSpanMerc = bboxN - bboxS;
       // Fit both lon and lat span to tile — use the more constraining axis
