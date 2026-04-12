@@ -1332,12 +1332,18 @@ async function exportCard(day) {
 
       // Derive zoom: at zoom z, 512px covers 360/2^z degrees lon — fit padded span to tile
       const tileW = Math.min(640, Math.round(mapW / 2));
-      const tileH = tileW; // square tile; clip handles any overflow
+      const tileH = tileW; // square tile request
       const lonSpan = bboxE - bboxW;
-      const latSpanMerc = bboxN - bboxS;
-      // Fit whichever axis is more constraining
+      // Exact Mercator Y span using sinLat formula (zoom-independent)
+      const sinLatFactor = (lat) => {
+        const s = Math.sin(lat * Math.PI / 180);
+        return 0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI);
+      };
+      const sinDiff = sinLatFactor(bboxS) - sinLatFactor(bboxN); // positive
+      // zoomByLon: fit lon span to tile width
       const zoomByLon = Math.log2(360 / lonSpan * (tileW / 512));
-      const zoomByLat = Math.log2(360 / latSpanMerc * (tileH / 512));
+      // zoomByLat: fit lat span to canvas height (uniform scale = mapW/tileW)
+      const zoomByLat = Math.log2(mapH * tileW / (512 * mapW * sinDiff));
       const zoom = Math.min(15, Math.max(9, Math.min(zoomByLon, zoomByLat)));
 
       // ── Mapbox token (URL-restricted to connorm-19.github.io) ─
@@ -1404,10 +1410,8 @@ async function exportCard(day) {
       ctx.rect(mapX, mapY, mapW, mapH);
       ctx.clip();
 
-      // Project track onto canvas using standard Web Mercator (matches Mapbox exactly).
-      // At zoom z the full world is 512*2^z px square.
-      // toWorldPx converts lat/lon to absolute world pixels.
-      // We subtract the centre world pixel, then scale to canvas.
+      // Project track using standard Web Mercator matching Mapbox exactly.
+      // Single uniform scale: tileW world-px maps to mapW canvas-px.
       const worldSize = 512 * Math.pow(2, zoom);
       const toWorldPx = (lat, lon) => {
         const wx = (lon + 180) / 360 * worldSize;
@@ -1416,14 +1420,13 @@ async function exportCard(day) {
         return [wx, wy];
       };
       const [cWx, cWy] = toWorldPx(bboxCLat, bboxCLon);
-      const scaleX = mapW / (tileW * 2);
-      const scaleY = mapH / (tileH * 2);
+      const scale = mapW / tileW; // uniform: 1 world-px = scale canvas-px
 
       const toXY = (lat, lon) => {
         const [wx, wy] = toWorldPx(lat, lon);
         return [
-          mapX + mapW / 2 + (wx - cWx) * scaleX,
-          mapY + mapH / 2 + (wy - cWy) * scaleY
+          mapX + mapW / 2 + (wx - cWx) * scale,
+          mapY + mapH / 2 + (wy - cWy) * scale
         ];
       };
 
