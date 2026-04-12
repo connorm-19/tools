@@ -1332,12 +1332,10 @@ async function exportCard(day) {
 
       // Derive zoom: at zoom z, 512px covers 360/2^z degrees lon — fit padded span to tile
       const tileW = Math.min(640, Math.round(mapW / 2));
-      // Make tile height proportional to track aspect ratio so tall tracks fill the tile
-      const trackAspect = (maxLat - minLat) / ((maxLon - minLon) || 0.001);
-      const tileH = Math.min(640, Math.round(tileW * Math.min(trackAspect, 3)));
+      const tileH = tileW; // square tile; clip handles any overflow
       const lonSpan = bboxE - bboxW;
       const latSpanMerc = bboxN - bboxS;
-      // Fit both lon and lat span to tile — use the more constraining axis
+      // Fit whichever axis is more constraining
       const zoomByLon = Math.log2(360 / lonSpan * (tileW / 512));
       const zoomByLat = Math.log2(360 / latSpanMerc * (tileH / 512));
       const zoom = Math.min(15, Math.max(9, Math.min(zoomByLon, zoomByLat)));
@@ -1406,25 +1404,23 @@ async function exportCard(day) {
       ctx.rect(mapX, mapY, mapW, mapH);
       ctx.clip();
 
-      // Project track onto canvas using Web Mercator
-      // Scale: at zoom z, one full 512px tile covers 360/2^z degrees lon
-      // The @2x tile is tileW*2 px wide, drawn onto mapW canvas px
-      // px-per-degree-lon in canvas space = (tileW*2 / (360/2^zoom)) * (mapW/(tileW*2))
-      //                                   = mapW * 2^zoom / 360
+      // Project track onto canvas using Web Mercator.
+      // The @2x tile has pixel dims tileW*2 x tileH*2, drawn onto mapW x mapH canvas px.
+      // Use separate X and Y scale factors to handle non-square tiles correctly.
       const mercY = (lat) => Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360));
-      const pxPerDegLon = mapW * Math.pow(2, zoom) / 360;
       const cMercYval = mercY(bboxCLat);
-      const mercScale = pxPerDegLon; // same scale applies to Mercator Y
+      const scaleX = mapW / (tileW * 2);
+      const scaleY = mapH / (tileH * 2);
 
       const toXY = (lat, lon) => {
         const mY = mercY(lat);
         const dLon = lon - bboxCLon;
         const dMercY = mY - cMercYval;
-        const pxX = dLon * pxPerDegLon;
-        const pxY = -(dMercY / (2 * Math.PI)) * Math.pow(2, zoom) * mapW / 360 * (2 * Math.PI);
+        const tilePxX = (dLon / 360) * Math.pow(2, zoom) * 512 * 2;
+        const tilePxY = -(dMercY / (2 * Math.PI)) * Math.pow(2, zoom) * 512 * 2;
         return [
-          mapX + mapW / 2 + pxX,
-          mapY + mapH / 2 + pxY
+          mapX + mapW / 2 + tilePxX * scaleX,
+          mapY + mapH / 2 + tilePxY * scaleY
         ];
       };
 
