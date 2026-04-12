@@ -1292,14 +1292,12 @@ async function exportCard(day) {
     });
     ctx.strokeStyle = '#c8922a'; ctx.lineWidth = 2.5; ctx.stroke();
 
-    // Min / max labels
+    // Y-axis labels: maxE at top-left, minE at bottom-left
     ctx.fillStyle = 'rgba(245,240,232,0.3)';
     ctx.font = '400 20px DM Sans, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(minE + 'm', chartX, chartY + chartH + 26);
-    ctx.textAlign = 'right';
-    ctx.fillText(maxE + 'm', chartX + chartW, chartY + chartH + 26);
-    ctx.textAlign = 'left';
+    ctx.fillText(maxE + 'm', chartX, chartY + 20);          // top of Y axis
+    ctx.fillText(minE + 'm', chartX, chartY + chartH - 6);  // bottom of Y axis
 
     // ── GPS MAP via Mapbox Static Images ─────────────────
     if (d.track && d.track.length > 1) {
