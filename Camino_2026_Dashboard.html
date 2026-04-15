@@ -127,7 +127,7 @@ td.time-cell{font-weight:500;color:var(--ink);white-space:nowrap;vertical-align:
       <div class="stat-pill"><span class="val">525.8</span><span class="lbl">GPS km</span></div>
       <div class="stat-pill"><span class="val">~10,100</span><span class="lbl">metres ascent</span></div>
       <div class="stat-pill"><span class="val">30.9</span><span class="lbl">avg km/day</span></div>
-      <div class="stat-pill"><span class="val">5.36</span><span class="lbl">base km/h</span></div>
+      <div class="stat-pill"><span class="val">6.05</span><span class="lbl">flat km/h</span></div>
       <div class="stat-pill"><span class="val">2</span><span class="lbl">days over 40km</span></div>
     </div>
   </div>
@@ -168,7 +168,7 @@ td.time-cell{font-weight:500;color:var(--ink);white-space:nowrap;vertical-align:
 </details>
 
 <div class="footnote">
-  Distances from <em>Le_Puy_-__Condom.gpx</em> (Haversine, 14,306 points). Elevation from GPX track (2m noise filter). Accommodation from Rob's Guide 2026, chemindecompostelle.com, wisepilgrim.com, booking.com, and direct websites. Moving times from pace model calibrated on Strava: Camino Francés 2022, TMB 2023.
+  Distances from <em>Le_Puy_-__Condom.gpx</em> (Haversine, 14,306 points). Elevation from GPX track (2m noise filter). Accommodation from Rob's Guide 2026, chemindecompostelle.com, wisepilgrim.com, booking.com, and direct websites. Moving times from personal pace formula T = [D + G/168 + L/98] / 6.05 (flat 6.05 km/h · 168m climb = 1 flat km · 98m descent = 1 flat km).
 </div>
 </main>
 </div>
@@ -292,7 +292,7 @@ const S=[
   sub:[{n:"Nasbinals",k:24.6},{n:"Aubrac village",k:32.9}],
   lat:44.6540,lon:3.0073,
   acc:[
-   {n:"⏳ PENDING — Chez Fanny & Jérémy (web form submitted Apr 15 morning · awaiting reply)",pr:"€30 bed+bkfst · 7 beds · chezfannyetjeremy.fr",bd:7,p:"06 29 83 58 82",url:"https://chezfannyetjeremy.fr"},
+   {n:"✅ YOUR BOOKING — Chez Fanny & Jérémy",pr:"Host: Fanny Cocq · Saint-Chély-d'Aubrac, 12470 · €30 bed+bkfst · 1 bed in 4-bed dorm · no dinner (kitchen available · épicerie 150m) · confirmed by email Apr 15 · payment details pending · fannyligniercocq@gmail.com · 06 29 83 58 82",bd:7,p:"06 29 83 58 82",url:"https://chezfannyetjeremy.fr"},
    {n:"❌ FULL — Relais Saint-Jacques (Karine)",pr:"€44 DP · complet pour Apr 19",bd:15,p:"06 47 32 04 08",url:"https://chambre-hote-saint-chely.fr"},
    {n:"Chez Fanny & Jérémy",                 pr:"€30 bed+bkfst",    bd:7, p:"06 29 83 58 82", url:"https://chezfannyetjeremy.fr"},
    {n:"La Tour des Anglais",                  pr:"€18 bed",    bd:16, p:"06 41 49 64 91", url:""},
@@ -448,8 +448,8 @@ const tbody=document.getElementById('tableBody');
 });
 
 S.forEach(s=>{
-  const greenDays=new Set([1,2,3,4,7,8,9,10,11,12,15,16]);
-  const yellowDays=new Set([5,6,13,14]);
+  const greenDays=new Set([1,2,3,4,5,7,8,9,10,11,12,15,16]);
+  const yellowDays=new Set([6,13,14]);
   const bookingStatus=greenDays.has(s.d)?'green':yellowDays.has(s.d)?'yellow':'red';
   const isGreen=bookingStatus==='green';
 
@@ -503,7 +503,7 @@ const STOPS=[
   {d:2,  t:"Saugues",               lat:44.9590, lon:3.5453, booking:'green'},
   {d:3,  t:"Le Sauvage",            lat:44.8241, lon:3.4873, booking:'green'},
   {d:4,  t:"Aumont-Aubrac",         lat:44.7223, lon:3.2873, booking:'green'},
-  {d:5,  t:"Saint-Chély-d'Aubrac",  lat:44.6540, lon:3.0073, booking:'yellow'},
+  {d:5,  t:"Saint-Chély-d'Aubrac",  lat:44.6540, lon:3.0073, booking:'green'},
   {d:6,  t:"Estaing",               lat:44.5524, lon:2.6722, booking:'yellow'},
   {d:7,  t:"Conques",               lat:44.5992, lon:2.3977, booking:'green'},
   {d:8,  t:"Montredon",             lat:44.6181, lon:2.1902, booking:'green'},
